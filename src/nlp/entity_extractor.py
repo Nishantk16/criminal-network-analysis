@@ -17,14 +17,43 @@ VEHICLE_PATTERN = re.compile(r"\b[A-Z]{2}-\d{2}-[A-Z]{2}-\d{4}\b")
 AMOUNT_PATTERN = re.compile(r"Rs\.?\s?[\d,]+")
 DATE_PATTERN = re.compile(r"\b\d{2}/\d{2}/\d{4}\b")
 
+# Known locations gazetteer — used to correct spaCy misclassifications
+# (spaCy sometimes tags Indian place names as PERSON since it wasn't trained on them)
+KNOWN_LOCATIONS = {
+    "kolkata", "howrah", "sealdah", "salt lake", "barasat", "park street",
+    "kolkata,", "salt lake, kolkata",
+}
+
+
+def _clean_name(name: str) -> str:
+    """Strip possessives and stray punctuation from an extracted name."""
+    name = name.replace("'s", "").replace("’s", "")
+    return name.strip(" ,.")
+
 
 def extract_entities(text: str) -> dict:
-    """Run spaCy NER + regex extraction on a single block of text."""
+    """Run spaCy NER + regex extraction on a single block of text, with
+    gazetteer-based correction for common Indian place-name misclassification."""
     doc = nlp(text)
 
+    raw_persons = {_clean_name(ent.text) for ent in doc.ents if ent.label_ == "PERSON"}
+    raw_locations = {_clean_name(ent.text) for ent in doc.ents if ent.label_ in ("GPE", "LOC")}
+
+    # Reclassify anything spaCy called a PERSON but that matches our known-location list
+    persons = {p for p in raw_persons if p.lower() not in KNOWN_LOCATIONS}
+    misclassified_locations = {p for p in raw_persons if p.lower() in KNOWN_LOCATIONS}
+    locations = raw_locations | misclassified_locations
+
+    # Drop empty strings / single-character noise, and anything that's actually
+    # a vehicle number or phone number misclassified as a person
+    persons = {p for p in persons if len(p) > 2
+               and not VEHICLE_PATTERN.search(p)
+               and not PHONE_PATTERN.search(p)}
+    locations = {l for l in locations if len(l) > 2}
+
     entities = {
-        "persons": sorted(set(ent.text for ent in doc.ents if ent.label_ == "PERSON")),
-        "locations": sorted(set(ent.text for ent in doc.ents if ent.label_ in ("GPE", "LOC"))),
+        "persons": sorted(persons),
+        "locations": sorted(locations),
         "organizations": sorted(set(ent.text for ent in doc.ents if ent.label_ == "ORG")),
         "phone_numbers": sorted(set(PHONE_PATTERN.findall(text))),
         "vehicle_numbers": sorted(set(VEHICLE_PATTERN.findall(text))),
@@ -59,6 +88,7 @@ def extract_relationships(text: str, entities: dict) -> list:
     for sent in doc.sents:
         sent_text = sent.text
         persons_in_sent = [p for p in entities["persons"] if p in sent_text]
+        persons_in_sent = list(dict.fromkeys(persons_in_sent))  # dedupe, preserve order
         if len(persons_in_sent) >= 2:
             rel_type = "ASSOCIATED_WITH"  # default
             for kw, label in keyword_map.items():

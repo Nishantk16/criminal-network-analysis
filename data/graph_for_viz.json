@@ -25,11 +25,11 @@
       "type": "Person"
     },
     {
-      "id": "Howrah",
+      "id": "Barasat",
       "type": "Location"
     },
     {
-      "id": "Barasat",
+      "id": "Howrah",
       "type": "Location"
     },
     {
@@ -42,10 +42,6 @@
     },
     {
       "id": "Bimal Das",
-      "type": "Person"
-    },
-    {
-      "id": "Vehicle WB-06-AB-1234",
       "type": "Person"
     }
   ],
@@ -157,12 +153,6 @@
       "target": "Bimal Das",
       "relation": "TRANSFERRED_MONEY",
       "source_type": "Transaction"
-    },
-    {
-      "source": "Howrah",
-      "target": "Suresh Yadav",
-      "relation": "ASSOCIATED_WITH",
-      "source_type": "FIR"
     },
     {
       "source": "Bimal Das",

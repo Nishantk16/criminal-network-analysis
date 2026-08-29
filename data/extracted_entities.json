@@ -38,11 +38,11 @@
     "entities": {
       "persons": [
         "Anil Ghosh",
-        "Howrah",
         "Suresh Yadav"
       ],
       "locations": [
         "Barasat",
+        "Howrah",
         "Sealdah"
       ],
       "organizations": [],
@@ -60,12 +60,6 @@
     },
     "relationships": [
       {
-        "source": "Howrah",
-        "target": "Suresh Yadav",
-        "type": "ASSOCIATED_WITH",
-        "evidence": "FIR-002: On 15/03/2026, surveillance teams tracked a vehicle WB-02-CD-5678 registered to Suresh Yadav moving between Howrah and Sealdah."
-      },
-      {
         "source": "Anil Ghosh",
         "target": "Suresh Yadav",
         "type": "CALLED",
@@ -77,7 +71,7 @@
     "raw_text": "FIR-003: Financial intelligence unit flagged a transaction of Rs. 480,000 from A...",
     "entities": {
       "persons": [
-        "Anil Ghosh's",
+        "Anil Ghosh",
         "Rajesh Verma"
       ],
       "locations": [
@@ -96,7 +90,7 @@
     },
     "relationships": [
       {
-        "source": "Anil Ghosh's",
+        "source": "Anil Ghosh",
         "target": "Rajesh Verma",
         "type": "TRANSFERRED_MONEY",
         "evidence": "FIR-003: Financial intelligence unit flagged a transaction of Rs. 480,000 from Anil Ghosh's account to an account held by Rajesh Verma on 18/03/2026, structured as four separate transfers to avoid reporting thresholds."
@@ -135,8 +129,7 @@
     "raw_text": "FIR-005: On 22/03/2026, police intercepted communication between phone number 91...",
     "entities": {
       "persons": [
-        "Anil Ghosh",
-        "Vehicle WB-06-AB-1234"
+        "Anil Ghosh"
       ],
       "locations": [
         "Howrah",

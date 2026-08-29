@@ -1,0 +1,7 @@
+spacy==3.8.0
+networkx
+matplotlib
+pyvis
+python-louvain
+fastapi
+uvicorn
