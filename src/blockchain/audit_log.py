@@ -21,7 +21,8 @@ import json
 import time
 from pathlib import Path
 
-LOG_FILE = Path("/home/claude/criminal-network-analysis/data/audit_chain.json")
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+LOG_FILE = PROJECT_ROOT / "data" / "audit_chain.json"
 
 
 def _hash_block(block: dict) -> str:
@@ -100,7 +101,7 @@ def log_pipeline_run(entities_result: list, influencers: list, alerts: list):
 
 if __name__ == "__main__":
     import sys
-    sys.path.append("/home/claude/criminal-network-analysis/src")
+    sys.path.append(str(PROJECT_ROOT / "src"))
     from nlp.entity_extractor import process_fir_file
     from graph.build_graph import (
         build_graph_from_fir_data, build_graph_from_cdr, build_graph_from_transactions,
@@ -108,7 +109,7 @@ if __name__ == "__main__":
     )
     import networkx as nx
 
-    DATA_DIR = Path("/home/claude/criminal-network-analysis/data")
+    DATA_DIR = PROJECT_ROOT / "data"
 
     entities_result = process_fir_file(str(DATA_DIR / "sample_fir_reports.txt"))
 

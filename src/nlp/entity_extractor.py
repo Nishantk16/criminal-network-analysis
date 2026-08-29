@@ -8,8 +8,13 @@ from unstructured crime report text.
 import re
 import json
 import spacy
+from pathlib import Path
 
 nlp = spacy.load("en_core_web_sm")
+
+# Project root is two levels up from this file (src/nlp/entity_extractor.py -> project root)
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+DATA_DIR = PROJECT_ROOT / "data"
 
 # --- Regex patterns for domain-specific entities spaCy won't catch out of the box ---
 PHONE_PATTERN = re.compile(r"\b[6-9]\d{9}\b")
@@ -127,11 +132,11 @@ def process_fir_file(filepath: str) -> list:
 
 
 if __name__ == "__main__":
-    output = process_fir_file("/home/claude/criminal-network-analysis/data/sample_fir_reports.txt")
+    output = process_fir_file(str(DATA_DIR / "sample_fir_reports.txt"))
 
     print(json.dumps(output, indent=2))
 
-    with open("/home/claude/criminal-network-analysis/data/extracted_entities.json", "w") as f:
+    with open(DATA_DIR / "extracted_entities.json", "w") as f:
         json.dump(output, f, indent=2)
 
     print("\n✅ Extraction complete. Saved to data/extracted_entities.json")

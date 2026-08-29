@@ -17,7 +17,8 @@ try:
 except ImportError:
     community_louvain = None
 
-DATA_DIR = Path("/home/claude/criminal-network-analysis/data")
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+DATA_DIR = PROJECT_ROOT / "data"
 
 
 def build_graph_from_fir_data(graph: nx.MultiDiGraph, fir_json_path: Path):

@@ -11,8 +11,9 @@ import matplotlib.pyplot as plt
 from pathlib import Path
 from pyvis.network import Network
 
-DATA_DIR = Path("/home/claude/criminal-network-analysis/data")
-OUT_DIR = Path("/mnt/user-data/outputs")
+PROJECT_ROOT = Path(__file__).resolve().parent.parent.parent
+DATA_DIR = PROJECT_ROOT / "data"
+OUT_DIR = PROJECT_ROOT / "outputs"
 OUT_DIR.mkdir(parents=True, exist_ok=True)
 
 COLOR_MAP = {
