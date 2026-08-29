@@ -1,0 +1,160 @@
+[
+  {
+    "raw_text": "FIR-001: On 12/03/2026, a complaint was filed by Ramesh Kumar stating that his v...",
+    "entities": {
+      "persons": [
+        "Rajesh Verma",
+        "Suresh Yadav"
+      ],
+      "locations": [
+        "Kolkata",
+        "Salt Lake"
+      ],
+      "organizations": [
+        "Ramesh Kumar"
+      ],
+      "phone_numbers": [
+        "9876543210"
+      ],
+      "vehicle_numbers": [
+        "WB-06-AB-1234"
+      ],
+      "amounts": [],
+      "dates": [
+        "12/03/2026"
+      ]
+    },
+    "relationships": [
+      {
+        "source": "Rajesh Verma",
+        "target": "Suresh Yadav",
+        "type": "CONTACTED",
+        "evidence": "Witnesses reported that Suresh Yadav, a known associate of the accused, was in contact with Rajesh Verma via phone number 9876543210."
+      }
+    ]
+  },
+  {
+    "raw_text": "FIR-002: On 15/03/2026, surveillance teams tracked a vehicle WB-02-CD-5678 regis...",
+    "entities": {
+      "persons": [
+        "Anil Ghosh",
+        "Howrah",
+        "Suresh Yadav"
+      ],
+      "locations": [
+        "Barasat",
+        "Sealdah"
+      ],
+      "organizations": [],
+      "phone_numbers": [
+        "9123456789",
+        "9876543210"
+      ],
+      "vehicle_numbers": [
+        "WB-02-CD-5678"
+      ],
+      "amounts": [],
+      "dates": [
+        "15/03/2026"
+      ]
+    },
+    "relationships": [
+      {
+        "source": "Howrah",
+        "target": "Suresh Yadav",
+        "type": "ASSOCIATED_WITH",
+        "evidence": "FIR-002: On 15/03/2026, surveillance teams tracked a vehicle WB-02-CD-5678 registered to Suresh Yadav moving between Howrah and Sealdah."
+      },
+      {
+        "source": "Anil Ghosh",
+        "target": "Suresh Yadav",
+        "type": "CALLED",
+        "evidence": "Call records show frequent contact between phone number 9876543210 (Suresh Yadav) and 9123456789 (Anil Ghosh), an alleged financier operating out of Barasat."
+      }
+    ]
+  },
+  {
+    "raw_text": "FIR-003: Financial intelligence unit flagged a transaction of Rs. 480,000 from A...",
+    "entities": {
+      "persons": [
+        "Anil Ghosh's",
+        "Rajesh Verma"
+      ],
+      "locations": [
+        "Kolkata",
+        "Salt Lake"
+      ],
+      "organizations": [],
+      "phone_numbers": [],
+      "vehicle_numbers": [],
+      "amounts": [
+        "Rs. 480,000"
+      ],
+      "dates": [
+        "18/03/2026"
+      ]
+    },
+    "relationships": [
+      {
+        "source": "Anil Ghosh's",
+        "target": "Rajesh Verma",
+        "type": "TRANSFERRED_MONEY",
+        "evidence": "FIR-003: Financial intelligence unit flagged a transaction of Rs. 480,000 from Anil Ghosh's account to an account held by Rajesh Verma on 18/03/2026, structured as four separate transfers to avoid reporting thresholds."
+      }
+    ]
+  },
+  {
+    "raw_text": "FIR-004: Social media intelligence identified a Facebook profile under the name ...",
+    "entities": {
+      "persons": [
+        "Bimal Das",
+        "Rajesh Verma",
+        "Suresh Yadav"
+      ],
+      "locations": [
+        "Salt Lake"
+      ],
+      "organizations": [],
+      "phone_numbers": [],
+      "vehicle_numbers": [],
+      "amounts": [],
+      "dates": [
+        "20/03/2026"
+      ]
+    },
+    "relationships": [
+      {
+        "source": "Bimal Das",
+        "target": "Suresh Yadav",
+        "type": "MET_WITH",
+        "evidence": "Posts referenced a meeting at Salt Lake warehouse on 20/03/2026 attended by Suresh Yadav and an unidentified man later confirmed as Bimal Das, a previously convicted individual with a criminal history in extortion cases."
+      }
+    ]
+  },
+  {
+    "raw_text": "FIR-005: On 22/03/2026, police intercepted communication between phone number 91...",
+    "entities": {
+      "persons": [
+        "Anil Ghosh",
+        "Vehicle WB-06-AB-1234"
+      ],
+      "locations": [
+        "Howrah",
+        "Salt Lake"
+      ],
+      "organizations": [],
+      "phone_numbers": [
+        "9123456789",
+        "9988776655"
+      ],
+      "vehicle_numbers": [
+        "WB-06-AB-1234"
+      ],
+      "amounts": [],
+      "dates": [
+        "22/03/2026"
+      ]
+    },
+    "relationships": []
+  }
+]
