@@ -97,3 +97,14 @@ def get_communities():
 def get_alerts():
     """Return suspicious activity flags (e.g. transaction structuring patterns)."""
     return detect_suspicious_transaction_pattern(DATA_DIR / "sample_transactions.csv")
+
+
+@app.get("/audit-chain")
+def get_audit_chain():
+    """Return the tamper-proof evidence audit chain for the dashboard to visualize."""
+    import json
+    chain_file = DATA_DIR / "audit_chain.json"
+    if not chain_file.exists():
+        return []
+    with open(chain_file) as f:
+        return json.load(f)

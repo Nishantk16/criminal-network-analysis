@@ -323,37 +323,48 @@ function barCell(value) {
 }
 
 async function loadGraph() {
-  const data = await fetchJSON("/graph");
-  const colorMap = { Person: "#E8544B", Location: "#3FA7A0", Vehicle: "#E8A33D" };
+  try {
+    const data = await fetchJSON("/graph");
+    if (typeof vis === "undefined") throw new Error("vis-network library failed to load from CDN (check internet connection)");
 
-  const nodes = new vis.DataSet(data.nodes.map(n => ({
-    id: n.id,
-    label: n.id,
-    color: {
-      background: colorMap[n.type] || "#59636E",
-      border: colorMap[n.type] || "#59636E",
-      highlight: { background: colorMap[n.type] || "#59636E", border: "#E6EDF3" }
-    },
-    font: { color: "#E6EDF3", face: "JetBrains Mono", size: 12 },
-    shape: "dot",
-    size: 14
-  })));
+    const colorMap = { Person: "#E8544B", Location: "#3FA7A0", Vehicle: "#E8A33D" };
 
-  const edges = new vis.DataSet(data.edges.map(e => ({
-    from: e.source,
-    to: e.target,
-    label: e.relation,
-    color: { color: "#2A3542", highlight: "#3FA7A0" },
-    font: { color: "#59636E", size: 9, face: "JetBrains Mono", strokeWidth: 0, background: "#0B0F14" },
-    arrows: "to",
-    smooth: { type: "curvedCW", roundness: 0.15 }
-  })));
+    const nodes = new vis.DataSet(data.nodes.map(n => ({
+      id: n.id,
+      label: n.id,
+      color: {
+        background: colorMap[n.type] || "#59636E",
+        border: colorMap[n.type] || "#59636E",
+        highlight: { background: colorMap[n.type] || "#59636E", border: "#E6EDF3" }
+      },
+      font: { color: "#E6EDF3", face: "JetBrains Mono", size: 12 },
+      shape: "dot",
+      size: 14
+    })));
 
-  const container = document.getElementById("network");
-  const network = new vis.Network(container, { nodes, edges }, {
-    physics: { barnesHut: { gravitationalConstant: -6000, springLength: 140 }, stabilization: { iterations: 120 } },
-    interaction: { hover: true }
-  });
+    const nodeIds = new Set(data.nodes.map(n => n.id));
+    const validEdges = data.edges.filter(e => nodeIds.has(e.source) && nodeIds.has(e.target));
+
+    const edges = new vis.DataSet(validEdges.map(e => ({
+      from: e.source,
+      to: e.target,
+      label: e.relation,
+      color: { color: "#2A3542", highlight: "#3FA7A0" },
+      font: { color: "#59636E", size: 9, face: "JetBrains Mono", strokeWidth: 0, background: "#0B0F14" },
+      arrows: "to",
+      smooth: { type: "curvedCW", roundness: 0.15 }
+    })));
+
+    const container = document.getElementById("network");
+    new vis.Network(container, { nodes: nodes, edges: edges }, {
+      physics: { barnesHut: { gravitationalConstant: -6000, springLength: 140 }, stabilization: { iterations: 120 } },
+      interaction: { hover: true }
+    });
+  } catch (e) {
+    document.getElementById("network").innerHTML =
+      `<div class="empty-note">Graph failed to render:<br><b style="color:#E8544B">${e.message}</b></div>`;
+    console.error(e);
+  }
 }
 
 async function loadInfluencers() {
@@ -397,13 +408,12 @@ async function loadCommunities() {
 
 async function loadAuditChain() {
   try {
-    const res = await fetch("audit_chain.json");
-    if (!res.ok) throw new Error("no local chain file");
-    const chain = await res.json();
+    const chain = await fetchJSON("/audit-chain");
+    if (!chain.length) throw new Error("empty chain");
     renderChain(chain);
   } catch (e) {
     document.getElementById("chain-strip").innerHTML = '<div class="empty-note">Run src/blockchain/audit_log.py to generate the evidence chain, then refresh.</div>';
-    document.getElementById("verify-banner").outerHTML = '<div class="verify-banner bad">Chain data not found locally.</div>';
+    document.getElementById("verify-banner").outerHTML = '<div class="verify-banner bad">Chain data not found — run the audit log script first.</div>';
   }
 }
 

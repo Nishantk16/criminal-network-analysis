@@ -79,8 +79,10 @@ def compute_key_influencers(graph: nx.MultiDiGraph, top_n=5):
     betweenness_centrality = nx.betweenness_centrality(simple_graph)
     try:
         pagerank = nx.pagerank(simple_graph)
-    except Exception:
-        pagerank = {n: 0 for n in simple_graph.nodes}
+    except Exception as e:
+        print(f"[warning] PageRank calculation failed ({e}); falling back to degree centrality. "
+              f"Install scipy (pip install scipy) for accurate PageRank scores.")
+        pagerank = degree_centrality
 
     scores = []
     for node in simple_graph.nodes:
