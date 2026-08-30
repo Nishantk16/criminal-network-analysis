@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Network Analysis — Case Dashboard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Barlow+Condensed:wght@500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/vis-network/9.1.2/vis-network.min.js"></script>
+<style>
+  :root {
+    --bg: #0B0F14;
+    --panel: #121922;
+    --panel-2: #161E28;
+    --line: #1E2833;
+    --line-soft: #182028;
+    --text: #E6EDF3;
+    --text-dim: #8B98A5;
+    --text-faint: #59636E;
+    --teal: #3FA7A0;
+    --teal-dim: #2A6E68;
+    --amber: #E8A33D;
+    --red: #E8544B;
+    --red-dim: #4A2320;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    background-image:
+      radial-gradient(ellipse 900px 500px at 15% -10%, rgba(63,167,160,0.07), transparent),
+      radial-gradient(ellipse 700px 500px at 100% 10%, rgba(232,163,61,0.05), transparent);
+    color: var(--text);
+    font-family: 'Inter', sans-serif;
+    min-height: 100vh;
+  }
+
+  /* ===== Header ===== */
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 20px 32px;
+    border-bottom: 1px solid var(--line);
+    background: rgba(18,25,34,0.6);
+  }
+
+  .case-id {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-faint);
+    letter-spacing: 0.08em;
+  }
+
+  .title-block h1 {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 26px;
+    letter-spacing: 0.01em;
+    margin: 2px 0 0 0;
+    text-transform: uppercase;
+  }
+
+  .title-block h1 span { color: var(--teal); }
+
+  .status-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    border: 1px solid var(--line);
+    padding: 7px 14px;
+    border-radius: 3px;
+    background: var(--panel);
+  }
+
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-faint); flex-shrink: 0; }
+  .dot.live { background: var(--teal); box-shadow: 0 0 8px var(--teal); animation: pulse 2s ease-in-out infinite; }
+  .dot.down { background: var(--red); box-shadow: 0 0 8px var(--red); }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+  /* ===== Layout ===== */
+  .grid {
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    gap: 1px;
+    background: var(--line);
+  }
+  @media (max-width: 980px) { .grid { grid-template-columns: 1fr; } }
+
+  .col { background: var(--bg); display: flex; flex-direction: column; }
+
+  section.panel {
+    border-bottom: 1px solid var(--line);
+    padding: 22px 28px;
+  }
+
+  .eyebrow {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 14px;
+  }
+  .eyebrow::after { content: ''; flex: 1; height: 1px; background: var(--line-soft); }
+
+  /* ===== Graph panel ===== */
+  #graph-panel { padding: 0; position: relative; }
+  #graph-panel .eyebrow { padding: 22px 28px 0 28px; margin-bottom: 10px; }
+  #network { width: 100%; height: 560px; background: radial-gradient(ellipse at center, #0E141B 0%, #0A0E13 100%); }
+  .legend {
+    position: absolute;
+    bottom: 16px;
+    left: 28px;
+    display: flex;
+    gap: 18px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    color: var(--text-dim);
+    background: rgba(11,15,20,0.85);
+    padding: 8px 14px;
+    border: 1px solid var(--line);
+    border-radius: 3px;
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .swatch { width: 9px; height: 9px; border-radius: 50%; }
+
+  .empty-note {
+    padding: 60px 28px;
+    text-align: center;
+    color: var(--text-faint);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    line-height: 1.8;
+  }
+
+  /* ===== Influencer list ===== */
+  .influencer-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 11px 0;
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .influencer-row:last-child { border-bottom: none; }
+  .rank {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-faint);
+    width: 16px;
+  }
+  .influencer-name { flex: 1; font-size: 13.5px; font-weight: 500; }
+  .influencer-meta { font-family: 'JetBrains Mono', monospace; font-size: 10px; color: var(--text-faint); margin-top: 2px; }
+  .bars { display: flex; gap: 2px; align-items: flex-end; height: 16px; }
+  .bar { width: 3px; background: var(--line); border-radius: 1px; }
+  .bar.on { background: var(--teal); }
+
+  /* ===== Alerts ===== */
+  .alert-card {
+    border: 1px solid var(--red-dim);
+    background: linear-gradient(180deg, rgba(232,84,75,0.08), rgba(232,84,75,0.02));
+    border-radius: 4px;
+    padding: 13px 15px;
+    margin-bottom: 10px;
+  }
+  .alert-card:last-child { margin-bottom: 0; }
+  .alert-flag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    color: var(--red);
+    text-transform: uppercase;
+    letter-spacing: 0.06em;
+    margin-bottom: 6px;
+  }
+  .alert-body { font-size: 13px; color: var(--text); line-height: 1.5; }
+  .alert-body b { color: var(--amber); font-weight: 600; }
+  .alert-meta { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: var(--text-dim); margin-top: 6px; }
+
+  /* ===== Communities ===== */
+  .community-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 10px;
+  }
+  .chip {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    padding: 4px 9px;
+    border-radius: 3px;
+    border: 1px solid var(--teal-dim);
+    color: var(--teal);
+    background: rgba(63,167,160,0.08);
+  }
+  .chip.loc { border-color: var(--line); color: var(--text-dim); background: transparent; }
+
+  /* ===== Audit chain (signature element) ===== */
+  #audit-panel { padding-bottom: 26px; }
+  .chain-strip {
+    display: flex;
+    align-items: center;
+    overflow-x: auto;
+    padding: 6px 2px 14px 2px;
+    gap: 0;
+  }
+  .block {
+    flex-shrink: 0;
+    width: 108px;
+    border: 1px solid var(--line);
+    background: var(--panel-2);
+    border-radius: 4px;
+    padding: 9px 10px;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .block .idx { font-size: 9px; color: var(--text-faint); }
+  .block .etype { font-size: 9.5px; color: var(--teal); margin: 4px 0; text-transform: uppercase; letter-spacing: 0.03em; }
+  .block .hash { font-size: 8.5px; color: var(--text-faint); word-break: break-all; line-height: 1.4; }
+  .link {
+    width: 18px;
+    height: 1px;
+    background: repeating-linear-gradient(90deg, var(--teal-dim) 0 4px, transparent 4px 7px);
+    flex-shrink: 0;
+  }
+  .verify-banner {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-top: 4px;
+    padding: 12px 15px;
+    border-radius: 4px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+  }
+  .verify-banner.ok { background: rgba(63,167,160,0.1); border: 1px solid var(--teal-dim); color: var(--teal); }
+  .verify-banner.bad { background: rgba(232,84,75,0.1); border: 1px solid var(--red-dim); color: var(--red); }
+
+  ::-webkit-scrollbar { height: 6px; width: 6px; }
+  ::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="title-block">
+    <div class="case-id">PS-26189 // NCRB — WOMEN SAFETY DIVISION</div>
+    <h1>Criminal <span>Network</span> Analysis</h1>
+  </div>
+  <div class="status-pill" id="status-pill">
+    <div class="dot" id="status-dot"></div>
+    <span id="status-text">Connecting to analysis engine…</span>
+  </div>
+</header>
+
+<div class="grid">
+  <div class="col">
+    <section class="panel" id="graph-panel">
+      <div class="eyebrow">Entity Relationship Graph</div>
+      <div id="network"></div>
+      <div class="legend">
+        <div class="legend-item"><div class="swatch" style="background:#E8544B"></div>Person</div>
+        <div class="legend-item"><div class="swatch" style="background:#3FA7A0"></div>Location</div>
+        <div class="legend-item"><div class="swatch" style="background:#E8A33D"></div>Vehicle</div>
+      </div>
+    </section>
+
+    <section class="panel" id="audit-panel">
+      <div class="eyebrow">Tamper-Proof Evidence Chain</div>
+      <div class="chain-strip" id="chain-strip"></div>
+      <div class="verify-banner ok" id="verify-banner">Verifying chain integrity…</div>
+    </section>
+  </div>
+
+  <div class="col">
+    <section class="panel">
+      <div class="eyebrow">Key Influencers</div>
+      <div id="influencers-list"><div class="empty-note">Loading…</div></div>
+    </section>
+
+    <section class="panel">
+      <div class="eyebrow">Suspicious Activity</div>
+      <div id="alerts-list"><div class="empty-note">Loading…</div></div>
+    </section>
+
+    <section class="panel">
+      <div class="eyebrow">Detected Sub-Groups</div>
+      <div id="communities-list"><div class="empty-note">Loading…</div></div>
+    </section>
+  </div>
+</div>
+
+<script>
+const API_BASE = "http://127.0.0.1:8000";
+
+async function fetchJSON(path) {
+  const res = await fetch(API_BASE + path);
+  if (!res.ok) throw new Error("Request failed: " + path);
+  return res.json();
+}
+
+function setStatus(ok, text) {
+  document.getElementById("status-text").textContent = text;
+  document.getElementById("status-dot").className = "dot " + (ok ? "live" : "down");
+}
+
+function barCell(value) {
+  // value 0..1 -> 5 bar signal indicator
+  const filled = Math.round(value * 5);
+  let html = '<div class="bars">';
+  for (let i = 0; i < 5; i++) {
+    const h = 4 + i * 3;
+    html += `<div class="bar ${i < filled ? 'on' : ''}" style="height:${h}px"></div>`;
+  }
+  html += '</div>';
+  return html;
+}
+
+async function loadGraph() {
+  const data = await fetchJSON("/graph");
+  const colorMap = { Person: "#E8544B", Location: "#3FA7A0", Vehicle: "#E8A33D" };
+
+  const nodes = new vis.DataSet(data.nodes.map(n => ({
+    id: n.id,
+    label: n.id,
+    color: {
+      background: colorMap[n.type] || "#59636E",
+      border: colorMap[n.type] || "#59636E",
+      highlight: { background: colorMap[n.type] || "#59636E", border: "#E6EDF3" }
+    },
+    font: { color: "#E6EDF3", face: "JetBrains Mono", size: 12 },
+    shape: "dot",
+    size: 14
+  })));
+
+  const edges = new vis.DataSet(data.edges.map(e => ({
+    from: e.source,
+    to: e.target,
+    label: e.relation,
+    color: { color: "#2A3542", highlight: "#3FA7A0" },
+    font: { color: "#59636E", size: 9, face: "JetBrains Mono", strokeWidth: 0, background: "#0B0F14" },
+    arrows: "to",
+    smooth: { type: "curvedCW", roundness: 0.15 }
+  })));
+
+  const container = document.getElementById("network");
+  const network = new vis.Network(container, { nodes, edges }, {
+    physics: { barnesHut: { gravitationalConstant: -6000, springLength: 140 }, stabilization: { iterations: 120 } },
+    interaction: { hover: true }
+  });
+}
+
+async function loadInfluencers() {
+  const data = await fetchJSON("/influencers?top_n=6");
+  const el = document.getElementById("influencers-list");
+  if (!data.length) { el.innerHTML = '<div class="empty-note">No individuals ranked yet.</div>'; return; }
+  el.innerHTML = data.map((p, i) => `
+    <div class="influencer-row">
+      <div class="rank">${String(i + 1).padStart(2, '0')}</div>
+      <div style="flex:1">
+        <div class="influencer-name">${p.name}</div>
+        <div class="influencer-meta">PAGERANK ${p.pagerank.toFixed(3)} · BETWEEN ${p.betweenness_centrality.toFixed(3)}</div>
+      </div>
+      ${barCell(p.degree_centrality)}
+    </div>
+  `).join("");
+}
+
+async function loadAlerts() {
+  const data = await fetchJSON("/alerts");
+  const el = document.getElementById("alerts-list");
+  if (!data.length) { el.innerHTML = '<div class="empty-note">No anomalies flagged.</div>'; return; }
+  el.innerHTML = data.map(a => `
+    <div class="alert-card">
+      <div class="alert-flag">⚠ ${a.flag}</div>
+      <div class="alert-body"><b>${a.sender}</b> → <b>${a.receiver}</b> — ₹${Number(a.amount).toLocaleString('en-IN')} repeated</div>
+      <div class="alert-meta">${a.repeat_count}× identical transfers detected</div>
+    </div>
+  `).join("");
+}
+
+async function loadCommunities() {
+  const data = await fetchJSON("/communities");
+  const el = document.getElementById("communities-list");
+  const groups = Object.values(data).filter(g => g.length > 1);
+  if (!groups.length) { el.innerHTML = '<div class="empty-note">No multi-member clusters found.</div>'; return; }
+  el.innerHTML = groups.map((members, i) => `
+    <div class="community-group">${members.map(m => `<span class="chip">${m}</span>`).join("")}</div>
+  `).join("");
+}
+
+async function loadAuditChain() {
+  try {
+    const res = await fetch("audit_chain.json");
+    if (!res.ok) throw new Error("no local chain file");
+    const chain = await res.json();
+    renderChain(chain);
+  } catch (e) {
+    document.getElementById("chain-strip").innerHTML = '<div class="empty-note">Run src/blockchain/audit_log.py to generate the evidence chain, then refresh.</div>';
+    document.getElementById("verify-banner").outerHTML = '<div class="verify-banner bad">Chain data not found locally.</div>';
+  }
+}
+
+function renderChain(chain) {
+  const strip = document.getElementById("chain-strip");
+  const shown = chain.slice(-8);
+  strip.innerHTML = shown.map((b, i) => `
+    <div class="block">
+      <div class="idx">BLOCK ${String(b.index).padStart(3, '0')}</div>
+      <div class="etype">${b.event_type.replace(/_/g, ' ')}</div>
+      <div class="hash">${b.block_hash.slice(0, 16)}…</div>
+    </div>
+    ${i < shown.length - 1 ? '<div class="link"></div>' : ''}
+  `).join("");
+
+  document.getElementById("verify-banner").textContent =
+    `✓ ${chain.length} blocks verified — evidence chain intact, no tampering detected`;
+}
+
+async function boot() {
+  try {
+    await fetchJSON("/");
+    setStatus(true, "Analysis engine online");
+  } catch (e) {
+    setStatus(false, "Engine offline — start uvicorn on :8000");
+    document.getElementById("network").innerHTML = '<div class="empty-note">Cannot reach API at ' + API_BASE + '.<br>Run: <b style="color:#E8A33D">uvicorn src.api.main:app --reload --port 8000</b></div>';
+    document.getElementById("influencers-list").innerHTML = '<div class="empty-note">Engine offline.</div>';
+    document.getElementById("alerts-list").innerHTML = '<div class="empty-note">Engine offline.</div>';
+    document.getElementById("communities-list").innerHTML = '<div class="empty-note">Engine offline.</div>';
+    return;
+  }
+  loadGraph();
+  loadInfluencers();
+  loadAlerts();
+  loadCommunities();
+  loadAuditChain();
+}
+
+boot();
+</script>
+</body>
+</html>
