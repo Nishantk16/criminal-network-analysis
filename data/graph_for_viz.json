@@ -43,6 +43,38 @@
     {
       "id": "Bimal Das",
       "type": "Person"
+    },
+    {
+      "id": "Kavita Sharma",
+      "type": "Person"
+    },
+    {
+      "id": "Lajpat Nagar",
+      "type": "Location"
+    },
+    {
+      "id": "Manoj Tiwari",
+      "type": "Person"
+    },
+    {
+      "id": "Delhi",
+      "type": "Location"
+    },
+    {
+      "id": "DL-08-XY-4321",
+      "type": "Vehicle"
+    },
+    {
+      "id": "Deepak Malhotra",
+      "type": "Person"
+    },
+    {
+      "id": "Paharganj",
+      "type": "Location"
+    },
+    {
+      "id": "DL-11-PQ-9087",
+      "type": "Vehicle"
     }
   ],
   "edges": [
@@ -168,9 +200,123 @@
     },
     {
       "source": "Bimal Das",
+      "target": "Manoj Tiwari",
+      "relation": "MET_WITH",
+      "source_type": "FIR"
+    },
+    {
+      "source": "Bimal Das",
+      "target": "Manoj Tiwari",
+      "relation": "CALLED",
+      "source_type": "FIR"
+    },
+    {
+      "source": "Bimal Das",
+      "target": "Manoj Tiwari",
+      "relation": "TRANSFERRED_MONEY",
+      "source_type": "FIR"
+    },
+    {
+      "source": "Bimal Das",
+      "target": "Manoj Tiwari",
+      "relation": "CALLED",
+      "source_type": "CDR"
+    },
+    {
+      "source": "Bimal Das",
+      "target": "Manoj Tiwari",
+      "relation": "TRANSFERRED_MONEY",
+      "source_type": "Transaction"
+    },
+    {
+      "source": "Bimal Das",
+      "target": "Deepak Malhotra",
+      "relation": "TRANSFERRED_MONEY",
+      "source_type": "FIR"
+    },
+    {
+      "source": "Bimal Das",
       "target": "Rajesh Verma",
       "relation": "CALLED",
       "source_type": "CDR"
+    },
+    {
+      "source": "Kavita Sharma",
+      "target": "Lajpat Nagar",
+      "relation": "ASSOCIATED_WITH",
+      "source_type": "FIR"
+    },
+    {
+      "source": "Lajpat Nagar",
+      "target": "Manoj Tiwari",
+      "relation": "ASSOCIATED_WITH",
+      "source_type": "FIR"
+    },
+    {
+      "source": "Manoj Tiwari",
+      "target": "Deepak Malhotra",
+      "relation": "CALLED",
+      "source_type": "CDR"
+    },
+    {
+      "source": "Manoj Tiwari",
+      "target": "Deepak Malhotra",
+      "relation": "CALLED",
+      "source_type": "CDR"
+    },
+    {
+      "source": "Manoj Tiwari",
+      "target": "Deepak Malhotra",
+      "relation": "TRANSFERRED_MONEY",
+      "source_type": "Transaction"
+    },
+    {
+      "source": "Manoj Tiwari",
+      "target": "Bimal Das",
+      "relation": "CALLED",
+      "source_type": "CDR"
+    },
+    {
+      "source": "Deepak Malhotra",
+      "target": "Manoj Tiwari",
+      "relation": "TRANSFERRED_MONEY",
+      "source_type": "FIR"
+    },
+    {
+      "source": "Deepak Malhotra",
+      "target": "Manoj Tiwari",
+      "relation": "CONTACTED",
+      "source_type": "FIR"
+    },
+    {
+      "source": "Deepak Malhotra",
+      "target": "Manoj Tiwari",
+      "relation": "CALLED",
+      "source_type": "CDR"
+    },
+    {
+      "source": "Deepak Malhotra",
+      "target": "Manoj Tiwari",
+      "relation": "CALLED",
+      "source_type": "CDR"
+    },
+    {
+      "source": "Deepak Malhotra",
+      "target": "Manoj Tiwari",
+      "relation": "TRANSFERRED_MONEY",
+      "source_type": "Transaction"
+    },
+    {
+      "source": "Deepak Malhotra",
+      "target": "Manoj Tiwari",
+      "relation": "TRANSFERRED_MONEY",
+      "source_type": "Transaction"
+    },
+    {
+      "source": "Deepak Malhotra",
+      "target": "Manoj Tiwari",
+      "relation": "TRANSFERRED_MONEY",
+      "source_type": "Transaction"
     }
   ]
 }

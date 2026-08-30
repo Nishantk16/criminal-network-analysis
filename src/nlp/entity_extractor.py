@@ -50,11 +50,24 @@ def extract_entities(text: str) -> dict:
     locations = raw_locations | misclassified_locations
 
     # Drop empty strings / single-character noise, and anything that's actually
-    # a vehicle number or phone number misclassified as a person
+    # a vehicle number, phone number, date, or report ID misclassified as a person
+    FIR_ID_PATTERN = re.compile(r"^FIR-\d+$", re.IGNORECASE)
     persons = {p for p in persons if len(p) > 2
                and not VEHICLE_PATTERN.search(p)
-               and not PHONE_PATTERN.search(p)}
-    locations = {l for l in locations if len(l) > 2}
+               and not PHONE_PATTERN.search(p)
+               and not DATE_PATTERN.search(p)
+               and not FIR_ID_PATTERN.match(p)}
+    locations = {l for l in locations if len(l) > 2 and not DATE_PATTERN.search(l)}
+
+    # Drop single-word person names that are just the trailing surname of a
+    # fuller two-word name already captured elsewhere in this document
+    # (spaCy sometimes splits "Deepak Malhotra" into a separate "Malhotra" mention)
+    multi_word = [p for p in persons if " " in p]
+    def is_truncated_surname(name):
+        if " " in name:
+            return False
+        return any(name == full.split()[-1] for full in multi_word)
+    persons = {p for p in persons if not is_truncated_surname(p)}
 
     entities = {
         "persons": sorted(persons),
@@ -127,6 +140,25 @@ def process_fir_file(filepath: str) -> list:
             "entities": entities,
             "relationships": relationships
         })
+
+    # Second pass: resolve truncated single-word surnames against the FULL
+    # multi-word names seen anywhere across all reports (not just within the
+    # same report) — spaCy occasionally drops the first name when a name
+    # appears in a parenthetical aside, e.g. "(Deepak Malhotra)".
+    all_multi_word = {p for r in results for p in r["entities"]["persons"] if " " in p}
+
+    def resolve(name):
+        if " " in name:
+            return name
+        matches = [full for full in all_multi_word if full.split()[-1] == name]
+        return matches[0] if matches else name
+
+    for r in results:
+        resolved_persons = {resolve(p) for p in r["entities"]["persons"]}
+        r["entities"]["persons"] = sorted(resolved_persons)
+        for rel in r["relationships"]:
+            rel["source"] = resolve(rel["source"])
+            rel["target"] = resolve(rel["target"])
 
     return results
 

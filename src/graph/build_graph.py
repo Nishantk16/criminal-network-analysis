@@ -114,9 +114,11 @@ def detect_communities(graph: nx.MultiDiGraph):
 
 def detect_suspicious_transaction_pattern(txn_csv_path: Path):
     """
-    Simple rule-based structuring detection:
-    Flags repeated same-amount transfers between the same pair within a short window
-    (classic 'smurfing' pattern to dodge reporting thresholds).
+    Rule-based structuring detection:
+    Flags 3+ transfers between the same sender-receiver pair, within a close
+    amount range of each other, as a possible 'smurfing' pattern used to
+    dodge reporting thresholds (amounts don't need to be identical --
+    real structuring often varies amounts slightly to look less suspicious).
     """
     from collections import defaultdict
     pairs = defaultdict(list)
@@ -124,17 +126,22 @@ def detect_suspicious_transaction_pattern(txn_csv_path: Path):
     with open(txn_csv_path) as f:
         reader = csv.DictReader(f)
         for row in reader:
-            key = (row["sender_name"], row["receiver_name"], row["amount"])
-            pairs[key].append(row["timestamp"])
+            key = (row["sender_name"], row["receiver_name"])
+            pairs[key].append((row["timestamp"], int(row["amount"])))
 
     flags = []
-    for (sender, receiver, amount), timestamps in pairs.items():
-        if len(timestamps) >= 3:
+    for (sender, receiver), txns in pairs.items():
+        if len(txns) < 3:
+            continue
+        amounts = [amt for _, amt in txns]
+        # Flag if amounts are all within 5% of their average (near-identical repeated transfers)
+        avg = sum(amounts) / len(amounts)
+        if all(abs(a - avg) / avg <= 0.05 for a in amounts):
             flags.append({
                 "sender": sender,
                 "receiver": receiver,
-                "amount": amount,
-                "repeat_count": len(timestamps),
+                "amount": round(avg),
+                "repeat_count": len(amounts),
                 "flag": "Possible structuring / smurfing pattern"
             })
     return flags
