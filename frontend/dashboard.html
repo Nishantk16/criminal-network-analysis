@@ -78,6 +78,158 @@
     background: var(--panel);
   }
 
+  /* ===== Search ===== */
+  .search-wrap {
+    position: relative;
+    width: 320px;
+  }
+  .search-input {
+    width: 100%;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12.5px;
+    padding: 10px 14px;
+    border-radius: 3px;
+    outline: none;
+  }
+  .search-input::placeholder { color: var(--text-faint); }
+  .search-input:focus { border-color: var(--teal-dim); }
+  .search-results {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    right: 0;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-radius: 4px;
+    overflow: hidden;
+    z-index: 50;
+    display: none;
+  }
+  .search-results.open { display: block; }
+  .search-result-item {
+    padding: 9px 14px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 12px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .search-result-item:last-child { border-bottom: none; }
+  .search-result-item:hover { background: rgba(63,167,160,0.1); }
+  .search-result-dot { width: 7px; height: 7px; border-radius: 50%; flex-shrink: 0; }
+  .search-result-type { margin-left: auto; color: var(--text-faint); font-size: 10px; }
+
+  /* ===== Entity detail panel (slide-over) ===== */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(5,7,10,0.6);
+    z-index: 90;
+    display: none;
+  }
+  .overlay.open { display: block; }
+  .detail-panel {
+    position: fixed;
+    top: 0;
+    right: -480px;
+    width: 460px;
+    max-width: 92vw;
+    height: 100vh;
+    background: var(--panel);
+    border-left: 1px solid var(--line);
+    z-index: 100;
+    transition: right 0.25s ease;
+    overflow-y: auto;
+    padding-bottom: 40px;
+  }
+  .detail-panel.open { right: 0; }
+  .detail-header {
+    padding: 24px 26px 18px 26px;
+    border-bottom: 1px solid var(--line);
+    position: sticky;
+    top: 0;
+    background: var(--panel);
+    z-index: 2;
+  }
+  .detail-close {
+    position: absolute;
+    top: 20px;
+    right: 20px;
+    background: none;
+    border: 1px solid var(--line);
+    color: var(--text-dim);
+    width: 28px;
+    height: 28px;
+    border-radius: 3px;
+    cursor: pointer;
+    font-family: 'JetBrains Mono', monospace;
+  }
+  .detail-close:hover { border-color: var(--teal-dim); color: var(--teal); }
+  .detail-type-tag {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--teal);
+    margin-bottom: 6px;
+  }
+  .detail-name {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 24px;
+    text-transform: uppercase;
+  }
+  .detail-rank {
+    margin-top: 10px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--amber);
+  }
+  .detail-section { padding: 18px 26px; border-bottom: 1px solid var(--line-soft); }
+  .detail-section:last-child { border-bottom: none; }
+  .detail-section-title {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: var(--text-faint);
+    margin-bottom: 12px;
+  }
+  .conn-row, .record-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 0;
+    border-bottom: 1px solid var(--line-soft);
+    font-size: 12.5px;
+  }
+  .conn-row:last-child, .record-row:last-child { border-bottom: none; }
+  .conn-name { font-weight: 500; cursor: pointer; }
+  .conn-name:hover { color: var(--teal); }
+  .conn-relation {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9.5px;
+    color: var(--text-faint);
+    text-transform: uppercase;
+  }
+  .record-meta { font-family: 'JetBrains Mono', monospace; font-size: 10.5px; color: var(--text-faint); }
+  .fir-snippet {
+    font-size: 12px;
+    line-height: 1.6;
+    color: var(--text-dim);
+    padding: 10px 12px;
+    background: var(--panel-2);
+    border-left: 2px solid var(--teal-dim);
+    border-radius: 2px;
+    margin-bottom: 8px;
+  }
+  .fir-snippet:last-child { margin-bottom: 0; }
+
   .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-faint); flex-shrink: 0; }
   .dot.live { background: var(--teal); box-shadow: 0 0 8px var(--teal); animation: pulse 2s ease-in-out infinite; }
   .dot.down { background: var(--red); box-shadow: 0 0 8px var(--red); }
@@ -253,11 +405,20 @@
     <div class="case-id">PS-26189 // NCRB — WOMEN SAFETY DIVISION</div>
     <h1>Criminal <span>Network</span> Analysis</h1>
   </div>
+  <div class="search-wrap">
+    <input type="text" class="search-input" id="search-input" placeholder="Search suspect, phone, vehicle, location…" autocomplete="off">
+    <div class="search-results" id="search-results"></div>
+  </div>
   <div class="status-pill" id="status-pill">
     <div class="dot" id="status-dot"></div>
     <span id="status-text">Connecting to analysis engine…</span>
   </div>
 </header>
+
+<div class="overlay" id="overlay"></div>
+<div class="detail-panel" id="detail-panel">
+  <div id="detail-content"></div>
+</div>
 
 <div class="grid">
   <div class="col">
@@ -356,9 +517,15 @@ async function loadGraph() {
     })));
 
     const container = document.getElementById("network");
-    new vis.Network(container, { nodes: nodes, edges: edges }, {
+    const network = new vis.Network(container, { nodes: nodes, edges: edges }, {
       physics: { barnesHut: { gravitationalConstant: -6000, springLength: 140 }, stabilization: { iterations: 120 } },
       interaction: { hover: true }
+    });
+
+    network.on("click", (params) => {
+      if (params.nodes.length > 0) {
+        openEntityDetail(params.nodes[0]);
+      }
     });
   } catch (e) {
     document.getElementById("network").innerHTML =
@@ -375,12 +542,15 @@ async function loadInfluencers() {
     <div class="influencer-row">
       <div class="rank">${String(i + 1).padStart(2, '0')}</div>
       <div style="flex:1">
-        <div class="influencer-name">${p.name}</div>
+        <div class="influencer-name" style="cursor:pointer" data-goto="${p.name}">${p.name}</div>
         <div class="influencer-meta">PAGERANK ${p.pagerank.toFixed(3)} · BETWEEN ${p.betweenness_centrality.toFixed(3)}</div>
       </div>
       ${barCell(p.degree_centrality)}
     </div>
   `).join("");
+  el.querySelectorAll(".influencer-name[data-goto]").forEach(node => {
+    node.addEventListener("click", () => openEntityDetail(node.dataset.goto));
+  });
 }
 
 async function loadAlerts() {
@@ -390,10 +560,14 @@ async function loadAlerts() {
   el.innerHTML = data.map(a => `
     <div class="alert-card">
       <div class="alert-flag">⚠ ${a.flag}</div>
-      <div class="alert-body"><b>${a.sender}</b> → <b>${a.receiver}</b> — ₹${Number(a.amount).toLocaleString('en-IN')} repeated</div>
+      <div class="alert-body"><b class="conn-name" data-goto="${a.sender}">${a.sender}</b> → <b class="conn-name" data-goto="${a.receiver}">${a.receiver}</b> — ₹${Number(a.amount).toLocaleString('en-IN')} repeated</div>
       <div class="alert-meta">${a.repeat_count}× identical transfers detected</div>
     </div>
   `).join("");
+  el.querySelectorAll(".conn-name[data-goto]").forEach(node => {
+    node.style.cursor = "pointer";
+    node.addEventListener("click", () => openEntityDetail(node.dataset.goto));
+  });
 }
 
 async function loadCommunities() {
@@ -432,6 +606,121 @@ function renderChain(chain) {
   document.getElementById("verify-banner").textContent =
     `✓ ${chain.length} blocks verified — evidence chain intact, no tampering detected`;
 }
+
+const typeColor = { Person: "#E8544B", Location: "#3FA7A0", Vehicle: "#E8A33D" };
+
+function debounce(fn, delay) {
+  let t;
+  return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), delay); };
+}
+
+async function runSearch(query) {
+  const resultsEl = document.getElementById("search-results");
+  if (!query.trim()) { resultsEl.classList.remove("open"); return; }
+  try {
+    const matches = await fetchJSON("/search?q=" + encodeURIComponent(query));
+    if (!matches.length) {
+      resultsEl.innerHTML = '<div class="search-result-item" style="color:var(--text-faint)">No matches found</div>';
+    } else {
+      resultsEl.innerHTML = matches.map(m => `
+        <div class="search-result-item" data-name="${m.id}">
+          <div class="search-result-dot" style="background:${typeColor[m.type] || '#59636E'}"></div>
+          ${m.id}
+          <span class="search-result-type">${m.type}</span>
+        </div>
+      `).join("");
+      resultsEl.querySelectorAll(".search-result-item[data-name]").forEach(el => {
+        el.addEventListener("click", () => {
+          openEntityDetail(el.dataset.name);
+          resultsEl.classList.remove("open");
+          document.getElementById("search-input").value = el.dataset.name;
+        });
+      });
+    }
+    resultsEl.classList.add("open");
+  } catch (e) { /* engine offline, ignore */ }
+}
+
+async function openEntityDetail(name) {
+  const panel = document.getElementById("detail-panel");
+  const overlay = document.getElementById("overlay");
+  const content = document.getElementById("detail-content");
+  content.innerHTML = '<div class="empty-note" style="padding:40px">Loading case file…</div>';
+  panel.classList.add("open");
+  overlay.classList.add("open");
+
+  try {
+    const d = await fetchJSON("/entity/" + encodeURIComponent(name));
+    if (d.error) { content.innerHTML = `<div class="empty-note" style="padding:40px">${d.error}</div>`; return; }
+
+    let html = `
+      <div class="detail-header">
+        <button class="detail-close" id="detail-close-btn">✕</button>
+        <div class="detail-type-tag">${d.type}</div>
+        <div class="detail-name">${d.name}</div>
+        ${d.rank ? `<div class="detail-rank">RANK #${d.rank.rank} · PAGERANK ${d.rank.pagerank.toFixed(3)} · DEGREE ${d.rank.degree_centrality.toFixed(3)}</div>` : ""}
+      </div>
+    `;
+
+    if (d.connections && d.connections.length) {
+      html += `<div class="detail-section"><div class="detail-section-title">Direct Connections (${d.connections.length})</div>`;
+      html += d.connections.map(c => `
+        <div class="conn-row">
+          <span class="conn-name" data-goto="${c.name}">${c.name}</span>
+          <span class="conn-relation">${c.direction === 'incoming' ? '←' : '→'} ${c.relation.replace(/_/g, ' ')}</span>
+        </div>
+      `).join("");
+      html += `</div>`;
+    }
+
+    if (d.call_records && d.call_records.length) {
+      html += `<div class="detail-section"><div class="detail-section-title">Call Records (${d.call_records.length})</div>`;
+      html += d.call_records.map(c => `
+        <div class="record-row">
+          <span>${c.direction === 'outgoing' ? '→' : '←'} ${c.with}</span>
+          <span class="record-meta">${c.timestamp.split(' ')[0]} · ${c.duration_sec}s · ${c.location}</span>
+        </div>
+      `).join("");
+      html += `</div>`;
+    }
+
+    if (d.transactions && d.transactions.length) {
+      html += `<div class="detail-section"><div class="detail-section-title">Financial Transactions (${d.transactions.length})</div>`;
+      html += d.transactions.map(t => `
+        <div class="record-row">
+          <span>${t.direction === 'sent' ? '→' : '←'} ${t.with}</span>
+          <span class="record-meta">₹${Number(t.amount).toLocaleString('en-IN')} · ${t.mode} · ${t.timestamp.split(' ')[0]}</span>
+        </div>
+      `).join("");
+      html += `</div>`;
+    }
+
+    if (d.fir_mentions && d.fir_mentions.length) {
+      html += `<div class="detail-section"><div class="detail-section-title">FIR Mentions (${d.fir_mentions.length})</div>`;
+      html += d.fir_mentions.map(f => `<div class="fir-snippet">${f}</div>`).join("");
+      html += `</div>`;
+    }
+
+    content.innerHTML = html;
+    document.getElementById("detail-close-btn").addEventListener("click", closeEntityDetail);
+    content.querySelectorAll(".conn-name[data-goto]").forEach(el => {
+      el.addEventListener("click", () => openEntityDetail(el.dataset.goto));
+    });
+  } catch (e) {
+    content.innerHTML = '<div class="empty-note" style="padding:40px">Could not load case file — is the engine running?</div>';
+  }
+}
+
+function closeEntityDetail() {
+  document.getElementById("detail-panel").classList.remove("open");
+  document.getElementById("overlay").classList.remove("open");
+}
+
+document.getElementById("overlay").addEventListener("click", closeEntityDetail);
+document.getElementById("search-input").addEventListener("input", debounce((e) => runSearch(e.target.value), 250));
+document.addEventListener("click", (e) => {
+  if (!e.target.closest(".search-wrap")) document.getElementById("search-results").classList.remove("open");
+});
 
 async function boot() {
   try {
