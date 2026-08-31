@@ -190,22 +190,6 @@
     font-size: 11px;
     color: var(--amber);
   }
-  .report-download-btn {
-    margin-top: 16px;
-    width: 100%;
-    background: var(--teal);
-    color: #06110F;
-    border: none;
-    font-family: 'JetBrains Mono', monospace;
-    font-weight: 600;
-    font-size: 11.5px;
-    letter-spacing: 0.03em;
-    padding: 11px;
-    border-radius: 3px;
-    cursor: pointer;
-  }
-  .report-download-btn:hover { background: #4FBDB5; }
-  .report-download-btn:disabled { opacity: 0.5; cursor: not-allowed; }
   .report-btn {
     margin-top: 16px;
     width: 100%;
@@ -899,7 +883,6 @@ async function openEntityDetail(name) {
         <div class="detail-type-tag">${d.type}</div>
         <div class="detail-name">${d.name}</div>
         ${d.rank ? `<div class="detail-rank">RANK #${d.rank.rank} · PAGERANK ${d.rank.pagerank.toFixed(3)} · DEGREE ${d.rank.degree_centrality.toFixed(3)}</div>` : ""}
-        <button class="report-download-btn" id="report-download-btn" data-name="${d.name}">⬇ Download Case Report (PDF)</button>
         <button class="report-btn" id="download-report-btn" data-name="${d.name}">⬇ Download Case Report (PDF)</button>
       </div>
     `;
@@ -945,7 +928,6 @@ async function openEntityDetail(name) {
 
     content.innerHTML = html;
     document.getElementById("detail-close-btn").addEventListener("click", closeEntityDetail);
-    document.getElementById("report-download-btn").addEventListener("click", (e) => downloadReport(e.target.dataset.name));
     content.querySelectorAll(".conn-name[data-goto]").forEach(el => {
       el.addEventListener("click", () => openEntityDetail(el.dataset.goto));
     });
@@ -958,33 +940,6 @@ async function openEntityDetail(name) {
 function closeEntityDetail() {
   document.getElementById("detail-panel").classList.remove("open");
   document.getElementById("overlay").classList.remove("open");
-}
-
-async function downloadReport(name) {
-  const btn = document.getElementById("report-download-btn");
-  const originalText = btn.textContent;
-  btn.disabled = true;
-  btn.textContent = "Generating report…";
-  try {
-    const headers = {};
-    if (AUTH_TOKEN) headers["Authorization"] = "Bearer " + AUTH_TOKEN;
-    const res = await fetch(API_BASE + "/report/" + encodeURIComponent(name), { headers });
-    if (!res.ok) throw new Error("Report generation failed");
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `case_report_${name.replace(/\s+/g, "_")}.pdf`;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-  } catch (e) {
-    alert("Could not generate report: " + e.message);
-  } finally {
-    btn.disabled = false;
-    btn.textContent = originalText;
-  }
 }
 
 async function downloadCaseReport(name) {
