@@ -14,6 +14,7 @@ sys.path.append(str(Path(__file__).resolve().parent.parent))
 
 from fastapi import FastAPI, Depends, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import Response
 from pydantic import BaseModel
 import networkx as nx
 
@@ -27,6 +28,7 @@ from graph.build_graph import (
     detect_suspicious_transaction_pattern,
 )
 from api.auth import verify_credentials, create_token, verify_token
+from api.report import generate_case_report
 
 DATA_DIR = Path(__file__).resolve().parent.parent.parent / "data"
 
@@ -176,6 +178,16 @@ def get_entity_detail(name: str, user: dict = Depends(require_auth)):
     centrality ranking if it's a person. This powers the dashboard's
     click-to-investigate detail panel.
     """
+    return _build_entity_detail(name)
+
+
+def _build_entity_detail(name: str) -> dict:
+    """
+    Return a full case-file view for a single entity: its type, direct
+    connections, every FIR/CDR/transaction record it appears in, and its
+    centrality ranking if it's a person. This powers the dashboard's
+    click-to-investigate detail panel.
+    """
     import csv
 
     G = _build_full_graph()
@@ -245,3 +257,37 @@ def get_entity_detail(name: str, user: dict = Depends(require_auth)):
         "call_records": call_records,
         "transactions": transactions,
     }
+
+
+@app.get("/report/{name}")
+def download_case_report(name: str, user: dict = Depends(require_auth)):
+    """
+    Generate and return a court-ready PDF case report for one entity,
+    including a chain-of-custody verification block tied to the tamper-proof
+    evidence audit chain. Also logs the report's generation to that same
+    chain, so there is an accountable record of who exported what evidence
+    and when.
+    """
+    import json
+
+    detail = _build_entity_detail(name)
+    if "error" in detail:
+        raise HTTPException(status_code=404, detail=detail["error"])
+
+    chain_file = DATA_DIR / "audit_chain.json"
+    audit_chain = json.load(open(chain_file)) if chain_file.exists() else []
+
+    pdf_bytes = generate_case_report(detail, generated_by=user["sub"], audit_chain=audit_chain)
+
+    try:
+        from blockchain.audit_log import add_evidence_block
+        add_evidence_block("REPORT_GENERATED", {"entity": name, "generated_by": user["sub"]})
+    except Exception:
+        pass
+
+    safe_filename = name.replace(" ", "_")
+    return Response(
+        content=pdf_bytes,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="case_report_{safe_filename}.pdf"'},
+    )

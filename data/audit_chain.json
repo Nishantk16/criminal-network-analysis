@@ -268,5 +268,27 @@
     },
     "previous_hash": "a2be2afd4e064050aaf63de755231c77b82904a85777f3c39ec1319b9582957a",
     "block_hash": "8b556eaf0ed45b763f17ba479d495102fc1d65cd1ea563077bc685edaddc1e73"
+  },
+  {
+    "index": 20,
+    "timestamp": "2026-08-31 06:06:11",
+    "event_type": "USER_LOGIN",
+    "details": {
+      "username": "investigator",
+      "role": "investigator"
+    },
+    "previous_hash": "8b556eaf0ed45b763f17ba479d495102fc1d65cd1ea563077bc685edaddc1e73",
+    "block_hash": "82065a22ab5fe5a9ea09679993585de090847c28c6186d0de65a9af296644409"
+  },
+  {
+    "index": 21,
+    "timestamp": "2026-08-31 06:06:11",
+    "event_type": "REPORT_GENERATED",
+    "details": {
+      "entity": "Bimal Das",
+      "generated_by": "investigator"
+    },
+    "previous_hash": "82065a22ab5fe5a9ea09679993585de090847c28c6186d0de65a9af296644409",
+    "block_hash": "a133c469ad15e4f5cc8fc3e107d84096e0d812eb39ab9af323292a2d4fddc0c7"
   }
 ]

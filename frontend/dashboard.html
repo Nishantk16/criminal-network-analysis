@@ -190,6 +190,38 @@
     font-size: 11px;
     color: var(--amber);
   }
+  .report-download-btn {
+    margin-top: 16px;
+    width: 100%;
+    background: var(--teal);
+    color: #06110F;
+    border: none;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    font-size: 11.5px;
+    letter-spacing: 0.03em;
+    padding: 11px;
+    border-radius: 3px;
+    cursor: pointer;
+  }
+  .report-download-btn:hover { background: #4FBDB5; }
+  .report-download-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .report-btn {
+    margin-top: 16px;
+    width: 100%;
+    background: var(--teal-dim);
+    color: #E6EDF3;
+    border: 1px solid var(--teal);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    padding: 10px;
+    border-radius: 3px;
+    cursor: pointer;
+  }
+  .report-btn:hover { background: var(--teal); color: #06110F; }
+  .report-btn:disabled { opacity: 0.6; cursor: not-allowed; }
   .detail-section { padding: 18px 26px; border-bottom: 1px solid var(--line-soft); }
   .detail-section:last-child { border-bottom: none; }
   .detail-section-title {
@@ -867,6 +899,8 @@ async function openEntityDetail(name) {
         <div class="detail-type-tag">${d.type}</div>
         <div class="detail-name">${d.name}</div>
         ${d.rank ? `<div class="detail-rank">RANK #${d.rank.rank} · PAGERANK ${d.rank.pagerank.toFixed(3)} · DEGREE ${d.rank.degree_centrality.toFixed(3)}</div>` : ""}
+        <button class="report-download-btn" id="report-download-btn" data-name="${d.name}">⬇ Download Case Report (PDF)</button>
+        <button class="report-btn" id="download-report-btn" data-name="${d.name}">⬇ Download Case Report (PDF)</button>
       </div>
     `;
 
@@ -911,9 +945,11 @@ async function openEntityDetail(name) {
 
     content.innerHTML = html;
     document.getElementById("detail-close-btn").addEventListener("click", closeEntityDetail);
+    document.getElementById("report-download-btn").addEventListener("click", (e) => downloadReport(e.target.dataset.name));
     content.querySelectorAll(".conn-name[data-goto]").forEach(el => {
       el.addEventListener("click", () => openEntityDetail(el.dataset.goto));
     });
+    document.getElementById("download-report-btn").addEventListener("click", (e) => downloadCaseReport(e.target.dataset.name));
   } catch (e) {
     content.innerHTML = '<div class="empty-note" style="padding:40px">Could not load case file — is the engine running?</div>';
   }
@@ -922,6 +958,60 @@ async function openEntityDetail(name) {
 function closeEntityDetail() {
   document.getElementById("detail-panel").classList.remove("open");
   document.getElementById("overlay").classList.remove("open");
+}
+
+async function downloadReport(name) {
+  const btn = document.getElementById("report-download-btn");
+  const originalText = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = "Generating report…";
+  try {
+    const headers = {};
+    if (AUTH_TOKEN) headers["Authorization"] = "Bearer " + AUTH_TOKEN;
+    const res = await fetch(API_BASE + "/report/" + encodeURIComponent(name), { headers });
+    if (!res.ok) throw new Error("Report generation failed");
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `case_report_${name.replace(/\s+/g, "_")}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+  } catch (e) {
+    alert("Could not generate report: " + e.message);
+  } finally {
+    btn.disabled = false;
+    btn.textContent = originalText;
+  }
+}
+
+async function downloadCaseReport(name) {
+  const btn = document.getElementById("download-report-btn");
+  const originalText = btn.textContent;
+  btn.textContent = "Generating…";
+  btn.disabled = true;
+  try {
+    const res = await fetch(API_BASE + "/report/" + encodeURIComponent(name), {
+      headers: { "Authorization": "Bearer " + AUTH_TOKEN }
+    });
+    if (!res.ok) throw new Error("Report generation failed");
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `case_report_${name.replace(/ /g, "_")}.pdf`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    window.URL.revokeObjectURL(url);
+  } catch (e) {
+    alert("Could not generate report: " + e.message);
+  } finally {
+    btn.textContent = originalText;
+    btn.disabled = false;
+  }
 }
 
 document.getElementById("overlay").addEventListener("click", closeEntityDetail);

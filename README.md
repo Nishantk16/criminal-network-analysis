@@ -96,6 +96,8 @@ every request. The dashboard handles this automatically.
 | `GET /audit-chain` | Tamper-proof evidence log |
 | `GET /search?q=` | Search entities by partial name |
 | `GET /entity/{name}` | Full case-file view for one entity |
+| `GET /report/{name}` | Download a court-ready PDF case dossier for one entity |
+| `GET /report/{name}` | Download a court-ready PDF case report for one entity |
 
 ### Demo Login Credentials
 

@@ -6,3 +6,6 @@ pyvis
 python-louvain
 fastapi
 uvicorn
+reportlab
+pypdf
+reportlab
