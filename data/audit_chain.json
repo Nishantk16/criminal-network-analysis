@@ -246,5 +246,27 @@
     },
     "previous_hash": "1737f0e04a5d9e6bf7aafe3f0169d63d2a9a9e3f7b7af1f4ebe7624bb20de814",
     "block_hash": "06aa61015423683867d5cda8da2b26fbdfa3afd7585dd19c74cfde758ce23b7c"
+  },
+  {
+    "index": 18,
+    "timestamp": "2026-08-31 05:57:23",
+    "event_type": "USER_LOGIN",
+    "details": {
+      "username": "investigator",
+      "role": "investigator"
+    },
+    "previous_hash": "06aa61015423683867d5cda8da2b26fbdfa3afd7585dd19c74cfde758ce23b7c",
+    "block_hash": "a2be2afd4e064050aaf63de755231c77b82904a85777f3c39ec1319b9582957a"
+  },
+  {
+    "index": 19,
+    "timestamp": "2026-08-31 05:57:33",
+    "event_type": "USER_LOGIN",
+    "details": {
+      "username": "investigator",
+      "role": "investigator"
+    },
+    "previous_hash": "a2be2afd4e064050aaf63de755231c77b82904a85777f3c39ec1319b9582957a",
+    "block_hash": "8b556eaf0ed45b763f17ba479d495102fc1d65cd1ea563077bc685edaddc1e73"
   }
 ]

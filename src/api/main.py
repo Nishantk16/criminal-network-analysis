@@ -12,8 +12,9 @@ from pathlib import Path
 # Allow imports from src/nlp and src/graph
 sys.path.append(str(Path(__file__).resolve().parent.parent))
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Depends, HTTPException, Header
 from fastapi.middleware.cors import CORSMiddleware
+from pydantic import BaseModel
 import networkx as nx
 
 from nlp.entity_extractor import process_fir_file
@@ -25,6 +26,7 @@ from graph.build_graph import (
     detect_communities,
     detect_suspicious_transaction_pattern,
 )
+from api.auth import verify_credentials, create_token, verify_token
 
 DATA_DIR = Path(__file__).resolve().parent.parent.parent / "data"
 
@@ -52,6 +54,47 @@ def _build_full_graph() -> nx.MultiDiGraph:
     return G
 
 
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+
+def require_auth(authorization: str = Header(None)) -> dict:
+    """
+    Dependency that protects every case-data endpoint. Requires a valid,
+    unexpired bearer token issued by /login. Without this, anyone who can
+    reach the API could pull sensitive case data with no accountability —
+    a real investigations system must know WHO is accessing WHAT.
+    """
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing or malformed Authorization header. Log in via /login first.")
+    token = authorization.removeprefix("Bearer ").strip()
+    payload = verify_token(token)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Invalid or expired session. Please log in again.")
+    return payload
+
+
+@app.post("/login")
+def login(body: LoginRequest):
+    """Authenticate an investigator and issue a signed, time-limited access token."""
+    user = verify_credentials(body.username, body.password)
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid username or password.")
+    token = create_token(user["username"], user["role"])
+
+    # Log every successful login to the tamper-proof audit chain — investigations
+    # systems need an accountable record of who accessed the system and when.
+    try:
+        sys.path.append(str(Path(__file__).resolve().parent.parent))
+        from blockchain.audit_log import add_evidence_block
+        add_evidence_block("USER_LOGIN", {"username": user["username"], "role": user["role"]})
+    except Exception:
+        pass  # audit logging failure should never block a legitimate login
+
+    return {"token": token, "username": user["username"], "role": user["role"], "full_name": user["full_name"]}
+
+
 @app.get("/")
 def root():
     return {
@@ -62,13 +105,13 @@ def root():
 
 
 @app.get("/entities")
-def get_entities():
+def get_entities(user: dict = Depends(require_auth)):
     """Return entities + relationships extracted from raw FIR text via NLP."""
     return process_fir_file(str(DATA_DIR / "sample_fir_reports.txt"))
 
 
 @app.get("/graph")
-def get_graph():
+def get_graph(user: dict = Depends(require_auth)):
     """Return the full network graph as nodes + edges, for frontend visualization."""
     G = _build_full_graph()
     nodes = [{"id": n, "type": data.get("type", "Unknown")} for n, data in G.nodes(data=True)]
@@ -80,27 +123,27 @@ def get_graph():
 
 
 @app.get("/influencers")
-def get_influencers(top_n: int = 5):
+def get_influencers(top_n: int = 5, user: dict = Depends(require_auth)):
     """Return the top individuals ranked by centrality — the 'key players' in the network."""
     G = _build_full_graph()
     return compute_key_influencers(G, top_n=top_n)
 
 
 @app.get("/communities")
-def get_communities():
+def get_communities(user: dict = Depends(require_auth)):
     """Return detected sub-groups/cells within the network."""
     G = _build_full_graph()
     return detect_communities(G)
 
 
 @app.get("/alerts")
-def get_alerts():
+def get_alerts(user: dict = Depends(require_auth)):
     """Return suspicious activity flags (e.g. transaction structuring patterns)."""
     return detect_suspicious_transaction_pattern(DATA_DIR / "sample_transactions.csv")
 
 
 @app.get("/audit-chain")
-def get_audit_chain():
+def get_audit_chain(user: dict = Depends(require_auth)):
     """Return the tamper-proof evidence audit chain for the dashboard to visualize."""
     import json
     chain_file = DATA_DIR / "audit_chain.json"
@@ -111,7 +154,7 @@ def get_audit_chain():
 
 
 @app.get("/search")
-def search_entities(q: str):
+def search_entities(q: str, user: dict = Depends(require_auth)):
     """Search for entities (persons, locations, vehicles) by partial name match."""
     G = _build_full_graph()
     q_lower = q.lower().strip()
@@ -126,7 +169,7 @@ def search_entities(q: str):
 
 
 @app.get("/entity/{name}")
-def get_entity_detail(name: str):
+def get_entity_detail(name: str, user: dict = Depends(require_auth)):
     """
     Return a full case-file view for a single entity: its type, direct
     connections, every FIR/CDR/transaction record it appears in, and its

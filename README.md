@@ -81,13 +81,32 @@ uvicorn src.api.main:app --reload --port 8000
 
 ### API Endpoints
 
+All endpoints below (except `/` and `/login`) require a valid access token —
+log in first via `/login`, then send `Authorization: Bearer <token>` with
+every request. The dashboard handles this automatically.
+
 | Endpoint | Description |
 |---|---|
+| `POST /login` | Authenticate and receive a signed, expiring access token |
 | `GET /entities` | Entities + relationships extracted from FIR text |
 | `GET /graph` | Full network graph (nodes + edges) |
 | `GET /influencers` | Top individuals ranked by centrality (key players) |
 | `GET /communities` | Detected criminal sub-groups/cells |
 | `GET /alerts` | Suspicious activity flags |
+| `GET /audit-chain` | Tamper-proof evidence log |
+| `GET /search?q=` | Search entities by partial name |
+| `GET /entity/{name}` | Full case-file view for one entity |
+
+### Demo Login Credentials
+
+| Username | Password | Role |
+|---|---|---|
+| `investigator` | `ncrb@2026` | investigator |
+| `admin` | `admin@2026` | admin |
+
+These are seeded in `data/users.json` (passwords stored as salted PBKDF2 hashes,
+never in plaintext). In production, accounts would be provisioned by a system
+administrator, not shipped as demo defaults.
 
 ## Why Blockchain?
 

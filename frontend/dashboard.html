@@ -230,6 +230,123 @@
   }
   .fir-snippet:last-child { margin-bottom: 0; }
 
+  /* ===== Login screen ===== */
+  #login-screen {
+    position: fixed;
+    inset: 0;
+    background: var(--bg);
+    background-image:
+      radial-gradient(ellipse 900px 500px at 15% -10%, rgba(63,167,160,0.08), transparent),
+      radial-gradient(ellipse 700px 500px at 100% 10%, rgba(232,163,61,0.06), transparent);
+    z-index: 200;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .login-card {
+    width: 380px;
+    max-width: 90vw;
+    background: var(--panel);
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    padding: 36px 34px;
+  }
+  .login-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    letter-spacing: 0.1em;
+    color: var(--text-faint);
+    text-align: center;
+    margin-bottom: 4px;
+  }
+  .login-title {
+    font-family: 'Barlow Condensed', sans-serif;
+    font-weight: 700;
+    font-size: 22px;
+    text-transform: uppercase;
+    text-align: center;
+    margin-bottom: 26px;
+  }
+  .login-title span { color: var(--teal); }
+  .login-field { margin-bottom: 16px; }
+  .login-label {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--text-dim);
+    display: block;
+    margin-bottom: 7px;
+  }
+  .login-input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--line);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 13px;
+    padding: 11px 13px;
+    border-radius: 3px;
+    outline: none;
+  }
+  .login-input:focus { border-color: var(--teal-dim); }
+  .login-submit {
+    width: 100%;
+    background: var(--teal);
+    color: #06110F;
+    border: none;
+    font-family: 'JetBrains Mono', monospace;
+    font-weight: 600;
+    font-size: 12.5px;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    padding: 12px;
+    border-radius: 3px;
+    cursor: pointer;
+    margin-top: 6px;
+  }
+  .login-submit:hover { background: #4FBDB5; }
+  .login-submit:disabled { opacity: 0.5; cursor: not-allowed; }
+  .login-error {
+    color: var(--red);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11.5px;
+    margin-top: 12px;
+    text-align: center;
+    display: none;
+  }
+  .login-error.show { display: block; }
+  .login-hint {
+    margin-top: 22px;
+    padding-top: 18px;
+    border-top: 1px solid var(--line-soft);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    color: var(--text-faint);
+    text-align: center;
+    line-height: 1.7;
+  }
+
+  .user-badge {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 11px;
+    color: var(--text-dim);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+  .logout-btn {
+    background: none;
+    border: 1px solid var(--line);
+    color: var(--text-faint);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    padding: 5px 10px;
+    border-radius: 3px;
+    cursor: pointer;
+  }
+  .logout-btn:hover { border-color: var(--red-dim); color: var(--red); }
+
   .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-faint); flex-shrink: 0; }
   .dot.live { background: var(--teal); box-shadow: 0 0 8px var(--teal); animation: pulse 2s ease-in-out infinite; }
   .dot.down { background: var(--red); box-shadow: 0 0 8px var(--red); }
@@ -400,6 +517,26 @@
 </head>
 <body>
 
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-badge">PS-26189 // NCRB — WOMEN SAFETY DIVISION</div>
+    <div class="login-title">Investigator <span>Access</span></div>
+    <form id="login-form">
+      <div class="login-field">
+        <label class="login-label">Username</label>
+        <input type="text" class="login-input" id="login-username" autocomplete="username" required>
+      </div>
+      <div class="login-field">
+        <label class="login-label">Password</label>
+        <input type="password" class="login-input" id="login-password" autocomplete="current-password" required>
+      </div>
+      <button type="submit" class="login-submit" id="login-submit-btn">Sign In</button>
+      <div class="login-error" id="login-error"></div>
+    </form>
+    <div class="login-hint">Authorized personnel only. All access is logged<br>to the tamper-proof evidence audit chain.</div>
+  </div>
+</div>
+
 <header>
   <div class="title-block">
     <div class="case-id">PS-26189 // NCRB — WOMEN SAFETY DIVISION</div>
@@ -412,6 +549,10 @@
   <div class="status-pill" id="status-pill">
     <div class="dot" id="status-dot"></div>
     <span id="status-text">Connecting to analysis engine…</span>
+  </div>
+  <div class="user-badge" id="user-badge" style="display:none">
+    <span id="user-badge-text"></span>
+    <button class="logout-btn" id="logout-btn">Sign Out</button>
   </div>
 </header>
 
@@ -459,12 +600,79 @@
 
 <script>
 const API_BASE = "http://127.0.0.1:8000";
+let AUTH_TOKEN = sessionStorage.getItem("auth_token") || null;
+let CURRENT_USER = null;
+try { CURRENT_USER = JSON.parse(sessionStorage.getItem("auth_user") || "null"); } catch (e) {}
 
 async function fetchJSON(path) {
-  const res = await fetch(API_BASE + path);
+  const headers = {};
+  if (AUTH_TOKEN) headers["Authorization"] = "Bearer " + AUTH_TOKEN;
+  const res = await fetch(API_BASE + path, { headers });
+  if (res.status === 401) {
+    sessionStorage.removeItem("auth_token");
+    sessionStorage.removeItem("auth_user");
+    showLoginScreen();
+    throw new Error("Session expired");
+  }
   if (!res.ok) throw new Error("Request failed: " + path);
   return res.json();
 }
+
+function showLoginScreen() {
+  document.getElementById("login-screen").style.display = "flex";
+  document.getElementById("user-badge").style.display = "none";
+}
+
+function showDashboard() {
+  document.getElementById("login-screen").style.display = "none";
+  document.getElementById("user-badge").style.display = "flex";
+  document.getElementById("user-badge-text").textContent =
+    `${CURRENT_USER.full_name} · ${CURRENT_USER.role.toUpperCase()}`;
+}
+
+document.getElementById("login-form").addEventListener("submit", async (e) => {
+  e.preventDefault();
+  const username = document.getElementById("login-username").value.trim();
+  const password = document.getElementById("login-password").value;
+  const errorEl = document.getElementById("login-error");
+  const btn = document.getElementById("login-submit-btn");
+  errorEl.classList.remove("show");
+  btn.disabled = true;
+  btn.textContent = "Signing In…";
+
+  try {
+    const res = await fetch(API_BASE + "/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ username, password }),
+    });
+    if (!res.ok) {
+      const err = await res.json();
+      throw new Error(err.detail || "Login failed");
+    }
+    const data = await res.json();
+    AUTH_TOKEN = data.token;
+    CURRENT_USER = { username: data.username, role: data.role, full_name: data.full_name };
+    sessionStorage.setItem("auth_token", AUTH_TOKEN);
+    sessionStorage.setItem("auth_user", JSON.stringify(CURRENT_USER));
+    showDashboard();
+    boot();
+  } catch (err) {
+    errorEl.textContent = err.message;
+    errorEl.classList.add("show");
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Sign In";
+  }
+});
+
+document.getElementById("logout-btn").addEventListener("click", () => {
+  AUTH_TOKEN = null;
+  CURRENT_USER = null;
+  sessionStorage.removeItem("auth_token");
+  sessionStorage.removeItem("auth_user");
+  showLoginScreen();
+});
 
 function setStatus(ok, text) {
   document.getElementById("status-text").textContent = text;
@@ -723,6 +931,8 @@ document.addEventListener("click", (e) => {
 });
 
 async function boot() {
+  if (!AUTH_TOKEN) { showLoginScreen(); return; }
+  showDashboard();
   try {
     await fetchJSON("/");
     setStatus(true, "Analysis engine online");
