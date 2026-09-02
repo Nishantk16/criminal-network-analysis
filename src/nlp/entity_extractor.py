@@ -26,7 +26,7 @@ DATE_PATTERN = re.compile(r"\b\d{2}/\d{2}/\d{4}\b")
 # (spaCy sometimes tags Indian place names as PERSON since it wasn't trained on them)
 KNOWN_LOCATIONS = {
     "kolkata", "howrah", "sealdah", "salt lake", "barasat", "park street",
-    "kolkata,", "salt lake, kolkata",
+    "kolkata,", "salt lake, kolkata", "lajpat nagar", "paharganj", "delhi",
 }
 
 

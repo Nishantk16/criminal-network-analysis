@@ -363,6 +363,105 @@
   }
   .logout-btn:hover { border-color: var(--red-dim); color: var(--red); }
 
+  /* ===== Redaction toggle ===== */
+  .redact-toggle {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 10.5px;
+    color: var(--text-dim);
+  }
+  .redact-switch {
+    position: relative;
+    width: 34px;
+    height: 18px;
+    background: var(--line);
+    border-radius: 9px;
+    cursor: pointer;
+    border: none;
+    padding: 0;
+  }
+  .redact-switch.on { background: var(--teal-dim); }
+  .redact-switch .knob {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 14px;
+    height: 14px;
+    background: var(--text-dim);
+    border-radius: 50%;
+    transition: transform 0.15s, background 0.15s;
+  }
+  .redact-switch.on .knob { transform: translateX(16px); background: var(--teal); }
+
+  /* ===== Alert confidence + reasoning ===== */
+  .alert-confidence {
+    display: inline-block;
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9.5px;
+    color: var(--amber);
+    border: 1px solid var(--amber);
+    border-radius: 3px;
+    padding: 1px 6px;
+    margin-left: 8px;
+  }
+  .alert-reasoning {
+    font-size: 11px;
+    color: var(--text-dim);
+    line-height: 1.5;
+    margin-top: 6px;
+    padding-top: 6px;
+    border-top: 1px solid var(--line-soft);
+  }
+
+  /* ===== Timeline ===== */
+  .timeline-strip {
+    max-height: 280px;
+    overflow-y: auto;
+    padding-right: 4px;
+  }
+  .timeline-row {
+    display: flex;
+    gap: 12px;
+    padding: 9px 0;
+    border-bottom: 1px solid var(--line-soft);
+  }
+  .timeline-row:last-child { border-bottom: none; }
+  .timeline-dot-col {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    width: 14px;
+    flex-shrink: 0;
+  }
+  .timeline-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    margin-top: 3px;
+    flex-shrink: 0;
+  }
+  .timeline-dot.FIR { background: var(--amber); }
+  .timeline-dot.CALL { background: var(--teal); }
+  .timeline-dot.TRANSACTION { background: var(--red); }
+  .timeline-content { flex: 1; }
+  .timeline-date {
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 9.5px;
+    color: var(--text-faint);
+    text-transform: uppercase;
+  }
+  .timeline-desc {
+    font-size: 12px;
+    color: var(--text);
+    line-height: 1.5;
+    margin-top: 2px;
+  }
+
+  /* ===== Heatmap ===== */
+  #heatmap-svg-wrap { display: flex; justify-content: center; padding: 8px 0; }
+
   .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--text-faint); flex-shrink: 0; }
   .dot.live { background: var(--teal); box-shadow: 0 0 8px var(--teal); animation: pulse 2s ease-in-out infinite; }
   .dot.down { background: var(--red); box-shadow: 0 0 8px var(--red); }
@@ -567,6 +666,10 @@
     <span id="status-text">Connecting to analysis engine…</span>
   </div>
   <div class="user-badge" id="user-badge" style="display:none">
+    <div class="redact-toggle">
+      <button class="redact-switch on" id="redact-switch" type="button"><span class="knob"></span></button>
+      Protect Complainant Identities
+    </div>
     <span id="user-badge-text"></span>
     <button class="logout-btn" id="logout-btn">Sign Out</button>
   </div>
@@ -587,6 +690,16 @@
         <div class="legend-item"><div class="swatch" style="background:#3FA7A0"></div>Location</div>
         <div class="legend-item"><div class="swatch" style="background:#E8A33D"></div>Vehicle</div>
       </div>
+    </section>
+
+    <section class="panel">
+      <div class="eyebrow">Case Timeline</div>
+      <div class="timeline-strip" id="timeline-strip"><div class="empty-note">Loading…</div></div>
+    </section>
+
+    <section class="panel">
+      <div class="eyebrow">Geographic Activity</div>
+      <div id="heatmap-svg-wrap"><div class="empty-note">Loading…</div></div>
     </section>
 
     <section class="panel" id="audit-panel">
@@ -619,11 +732,18 @@ const API_BASE = "http://127.0.0.1:8000";
 let AUTH_TOKEN = sessionStorage.getItem("auth_token") || null;
 let CURRENT_USER = null;
 try { CURRENT_USER = JSON.parse(sessionStorage.getItem("auth_user") || "null"); } catch (e) {}
+let REDACT_MODE = sessionStorage.getItem("redact_mode") !== "off"; // defaults ON
+
+const REDACT_AWARE_PATHS = ["/entities", "/graph", "/search", "/entity/", "/report/", "/timeline"];
 
 async function fetchJSON(path) {
   const headers = {};
   if (AUTH_TOKEN) headers["Authorization"] = "Bearer " + AUTH_TOKEN;
-  const res = await fetch(API_BASE + path, { headers });
+  let finalPath = path;
+  if (REDACT_AWARE_PATHS.some(p => path.startsWith(p))) {
+    finalPath += (path.includes("?") ? "&" : "?") + "redact=" + REDACT_MODE;
+  }
+  const res = await fetch(API_BASE + finalPath, { headers });
   if (res.status === 401) {
     sessionStorage.removeItem("auth_token");
     sessionStorage.removeItem("auth_user");
@@ -644,6 +764,7 @@ function showDashboard() {
   document.getElementById("user-badge").style.display = "flex";
   document.getElementById("user-badge-text").textContent =
     `${CURRENT_USER.full_name} · ${CURRENT_USER.role.toUpperCase()}`;
+  document.getElementById("redact-switch").classList.toggle("on", REDACT_MODE);
 }
 
 document.getElementById("login-form").addEventListener("submit", async (e) => {
@@ -688,6 +809,13 @@ document.getElementById("logout-btn").addEventListener("click", () => {
   sessionStorage.removeItem("auth_token");
   sessionStorage.removeItem("auth_user");
   showLoginScreen();
+});
+
+document.getElementById("redact-switch").addEventListener("click", (e) => {
+  REDACT_MODE = !REDACT_MODE;
+  sessionStorage.setItem("redact_mode", REDACT_MODE ? "on" : "off");
+  e.currentTarget.classList.toggle("on", REDACT_MODE);
+  if (AUTH_TOKEN) boot(); // reload all data under the new redaction setting
 });
 
 function setStatus(ok, text) {
@@ -783,9 +911,10 @@ async function loadAlerts() {
   if (!data.length) { el.innerHTML = '<div class="empty-note">No anomalies flagged.</div>'; return; }
   el.innerHTML = data.map(a => `
     <div class="alert-card">
-      <div class="alert-flag">⚠ ${a.flag}</div>
+      <div class="alert-flag">⚠ ${a.flag}${a.confidence ? `<span class="alert-confidence">${Math.round(a.confidence * 100)}% CONFIDENCE</span>` : ""}</div>
       <div class="alert-body"><b class="conn-name" data-goto="${a.sender}">${a.sender}</b> → <b class="conn-name" data-goto="${a.receiver}">${a.receiver}</b> — ₹${Number(a.amount).toLocaleString('en-IN')} repeated</div>
       <div class="alert-meta">${a.repeat_count}× identical transfers detected</div>
+      ${a.reasoning ? `<div class="alert-reasoning">${a.reasoning}</div>` : ""}
     </div>
   `).join("");
   el.querySelectorAll(".conn-name[data-goto]").forEach(node => {
@@ -802,6 +931,63 @@ async function loadCommunities() {
   el.innerHTML = groups.map((members, i) => `
     <div class="community-group">${members.map(m => `<span class="chip">${m}</span>`).join("")}</div>
   `).join("");
+}
+
+async function loadTimeline() {
+  const el = document.getElementById("timeline-strip");
+  try {
+    const events = await fetchJSON("/timeline");
+    if (!events.length) { el.innerHTML = '<div class="empty-note">No events found.</div>'; return; }
+    el.innerHTML = events.map(e => `
+      <div class="timeline-row">
+        <div class="timeline-dot-col"><div class="timeline-dot ${e.type}"></div></div>
+        <div class="timeline-content">
+          <div class="timeline-date">${e.date} · ${e.type}</div>
+          <div class="timeline-desc">${e.description}</div>
+        </div>
+      </div>
+    `).join("");
+  } catch (e) {
+    el.innerHTML = '<div class="empty-note">Could not load timeline.</div>';
+  }
+}
+
+async function loadHeatmap() {
+  const wrap = document.getElementById("heatmap-svg-wrap");
+  try {
+    const points = await fetchJSON("/heatmap");
+    const active = points.filter(p => p.mentions > 0);
+    if (!active.length) { wrap.innerHTML = '<div class="empty-note">No location activity recorded.</div>'; return; }
+
+    const lats = active.map(p => p.lat), lngs = active.map(p => p.lng);
+    const minLat = Math.min(...lats), maxLat = Math.max(...lats);
+    const minLng = Math.min(...lngs), maxLng = Math.max(...lngs);
+    const W = 640, H = 320, PAD = 60;
+    const maxMentions = Math.max(...active.map(p => p.mentions));
+
+    const scaleX = (lng) => PAD + (maxLng === minLng ? (W - 2 * PAD) / 2 : (lng - minLng) / (maxLng - minLng) * (W - 2 * PAD));
+    const scaleY = (lat) => H - PAD - (maxLat === minLat ? (H - 2 * PAD) / 2 : (lat - minLat) / (maxLat - minLat) * (H - 2 * PAD));
+
+    let svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" style="max-width:100%">`;
+    svg += `<rect x="0" y="0" width="${W}" height="${H}" fill="none" />`;
+    // faint grid
+    for (let i = 0; i <= 4; i++) {
+      const gy = PAD + i * (H - 2 * PAD) / 4;
+      svg += `<line x1="${PAD}" y1="${gy}" x2="${W - PAD}" y2="${gy}" stroke="#1E2833" stroke-width="1" />`;
+    }
+    active.forEach(p => {
+      const x = scaleX(p.lng), y = scaleY(p.lat);
+      const r = 6 + (p.mentions / maxMentions) * 20;
+      svg += `<circle cx="${x}" cy="${y}" r="${r}" fill="#3FA7A0" fill-opacity="0.18" stroke="#3FA7A0" stroke-width="1.5" />`;
+      svg += `<circle cx="${x}" cy="${y}" r="3" fill="#3FA7A0" />`;
+      svg += `<text x="${x}" y="${y - r - 8}" fill="#E6EDF3" font-family="JetBrains Mono, monospace" font-size="10" text-anchor="middle">${p.name}</text>`;
+      svg += `<text x="${x}" y="${y - r + 6}" fill="#59636E" font-family="JetBrains Mono, monospace" font-size="8" text-anchor="middle" dy="10">${p.mentions} mentions</text>`;
+    });
+    svg += `</svg>`;
+    wrap.innerHTML = svg;
+  } catch (e) {
+    wrap.innerHTML = '<div class="empty-note">Could not load geographic data.</div>';
+  }
 }
 
 async function loadAuditChain() {
@@ -847,7 +1033,7 @@ async function runSearch(query) {
       resultsEl.innerHTML = '<div class="search-result-item" style="color:var(--text-faint)">No matches found</div>';
     } else {
       resultsEl.innerHTML = matches.map(m => `
-        <div class="search-result-item" data-name="${m.id}">
+        <div class="search-result-item" data-name="${m.actual_name || m.id}">
           <div class="search-result-dot" style="background:${typeColor[m.type] || '#59636E'}"></div>
           ${m.id}
           <span class="search-result-type">${m.type}</span>
@@ -948,7 +1134,7 @@ async function downloadCaseReport(name) {
   btn.textContent = "Generating…";
   btn.disabled = true;
   try {
-    const res = await fetch(API_BASE + "/report/" + encodeURIComponent(name), {
+    const res = await fetch(API_BASE + "/report/" + encodeURIComponent(name) + "?redact=" + REDACT_MODE, {
       headers: { "Authorization": "Bearer " + AUTH_TOKEN }
     });
     if (!res.ok) throw new Error("Report generation failed");
@@ -994,6 +1180,8 @@ async function boot() {
   loadAlerts();
   loadCommunities();
   loadAuditChain();
+  loadTimeline();
+  loadHeatmap();
 }
 
 boot();

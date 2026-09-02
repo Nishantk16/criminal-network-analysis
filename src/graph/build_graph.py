@@ -137,12 +137,25 @@ def detect_suspicious_transaction_pattern(txn_csv_path: Path):
         # Flag if amounts are all within 5% of their average (near-identical repeated transfers)
         avg = sum(amounts) / len(amounts)
         if all(abs(a - avg) / avg <= 0.05 for a in amounts):
+            # Confidence scales with repeat count and how tightly amounts cluster —
+            # more repeats and tighter clustering both make the pattern less likely
+            # to be coincidental.
+            max_deviation = max(abs(a - avg) / avg for a in amounts)
+            confidence = min(0.98, 0.55 + 0.08 * len(amounts) + (0.05 - max_deviation))
             flags.append({
                 "sender": sender,
                 "receiver": receiver,
                 "amount": round(avg),
                 "repeat_count": len(amounts),
-                "flag": "Possible structuring / smurfing pattern"
+                "flag": "Possible structuring / smurfing pattern",
+                "confidence": round(confidence, 2),
+                "reasoning": (
+                    f"{len(amounts)} transfers from {sender} to {receiver}, each within "
+                    f"{round(max_deviation * 100, 1)}% of the average amount (₹{round(avg):,}). "
+                    f"Splitting a larger sum into multiple near-equal transfers is a well-known "
+                    f"'structuring' technique used to stay under mandatory cash-transaction "
+                    f"reporting thresholds (e.g. the ₹10 lakh threshold under India's PMLA rules)."
+                ),
             })
     return flags
 

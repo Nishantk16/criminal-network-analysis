@@ -29,6 +29,8 @@ from graph.build_graph import (
 )
 from api.auth import verify_credentials, create_token, verify_token
 from api.report import generate_case_report
+from api.redaction import redact_name, redact_text, is_complainant
+from graph.geodata import LOCATION_COORDS
 
 DATA_DIR = Path(__file__).resolve().parent.parent.parent / "data"
 
@@ -107,18 +109,24 @@ def root():
 
 
 @app.get("/entities")
-def get_entities(user: dict = Depends(require_auth)):
+def get_entities(redact: bool = True, user: dict = Depends(require_auth)):
     """Return entities + relationships extracted from raw FIR text via NLP."""
-    return process_fir_file(str(DATA_DIR / "sample_fir_reports.txt"))
+    reports = process_fir_file(str(DATA_DIR / "sample_fir_reports.txt"))
+    if redact:
+        for r in reports:
+            r["raw_text"] = redact_text(r["raw_text"], True)
+            r["entities"]["persons"] = [redact_name(p, True) for p in r["entities"]["persons"]]
+    return reports
 
 
 @app.get("/graph")
-def get_graph(user: dict = Depends(require_auth)):
+def get_graph(redact: bool = True, user: dict = Depends(require_auth)):
     """Return the full network graph as nodes + edges, for frontend visualization."""
     G = _build_full_graph()
-    nodes = [{"id": n, "type": data.get("type", "Unknown")} for n, data in G.nodes(data=True)]
+    nodes = [{"id": redact_name(n, redact), "type": data.get("type", "Unknown")} for n, data in G.nodes(data=True)]
     edges = [
-        {"source": u, "target": v, "relation": data.get("relation", ""), "source_type": data.get("source_type", "")}
+        {"source": redact_name(u, redact), "target": redact_name(v, redact),
+         "relation": data.get("relation", ""), "source_type": data.get("source_type", "")}
         for u, v, data in G.edges(data=True)
     ]
     return {"nodes": nodes, "edges": edges}
@@ -156,32 +164,32 @@ def get_audit_chain(user: dict = Depends(require_auth)):
 
 
 @app.get("/search")
-def search_entities(q: str, user: dict = Depends(require_auth)):
+def search_entities(q: str, redact: bool = True, user: dict = Depends(require_auth)):
     """Search for entities (persons, locations, vehicles) by partial name match."""
     G = _build_full_graph()
     q_lower = q.lower().strip()
     if not q_lower:
         return []
     matches = [
-        {"id": n, "type": data.get("type", "Unknown")}
+        {"id": redact_name(n, redact), "type": data.get("type", "Unknown"), "actual_name": n}
         for n, data in G.nodes(data=True)
-        if q_lower in n.lower()
+        if q_lower in n.lower() or q_lower in redact_name(n, redact).lower()
     ]
     return matches[:10]
 
 
 @app.get("/entity/{name}")
-def get_entity_detail(name: str, user: dict = Depends(require_auth)):
+def get_entity_detail(name: str, redact: bool = True, user: dict = Depends(require_auth)):
     """
     Return a full case-file view for a single entity: its type, direct
     connections, every FIR/CDR/transaction record it appears in, and its
     centrality ranking if it's a person. This powers the dashboard's
     click-to-investigate detail panel.
     """
-    return _build_entity_detail(name)
+    return _build_entity_detail(name, redact=redact)
 
 
-def _build_entity_detail(name: str) -> dict:
+def _build_entity_detail(name: str, redact: bool = True) -> dict:
     """
     Return a full case-file view for a single entity: its type, direct
     connections, every FIR/CDR/transaction record it appears in, and its
@@ -201,25 +209,26 @@ def _build_entity_detail(name: str) -> dict:
     seen = set()
     for u, v, data in G.edges(data=True):
         if u == name and v not in seen:
-            connections.append({"name": v, "relation": data.get("relation", ""), "direction": "outgoing"})
+            connections.append({"name": redact_name(v, redact), "relation": data.get("relation", ""), "direction": "outgoing"})
             seen.add(v)
         elif v == name and u not in seen:
-            connections.append({"name": u, "relation": data.get("relation", ""), "direction": "incoming"})
+            connections.append({"name": redact_name(u, redact), "relation": data.get("relation", ""), "direction": "incoming"})
             seen.add(u)
 
     # FIR mentions
     fir_mentions = []
     for report in process_fir_file(str(DATA_DIR / "sample_fir_reports.txt")):
         if name in report["entities"]["persons"] or name in report["entities"]["locations"]:
-            fir_mentions.append(report["raw_text"])
+            fir_mentions.append(redact_text(report["raw_text"], redact))
 
     # CDR records involving this entity
     call_records = []
     with open(DATA_DIR / "sample_cdr.csv") as f:
         for row in csv.DictReader(f):
             if row["caller_name"] == name or row["receiver_name"] == name:
+                other = row["receiver_name"] if row["caller_name"] == name else row["caller_name"]
                 call_records.append({
-                    "with": row["receiver_name"] if row["caller_name"] == name else row["caller_name"],
+                    "with": redact_name(other, redact),
                     "timestamp": row["timestamp"],
                     "duration_sec": row["duration_sec"],
                     "location": row["tower_location"],
@@ -231,8 +240,9 @@ def _build_entity_detail(name: str) -> dict:
     with open(DATA_DIR / "sample_transactions.csv") as f:
         for row in csv.DictReader(f):
             if row["sender_name"] == name or row["receiver_name"] == name:
+                other = row["receiver_name"] if row["sender_name"] == name else row["sender_name"]
                 transactions.append({
-                    "with": row["receiver_name"] if row["sender_name"] == name else row["sender_name"],
+                    "with": redact_name(other, redact),
                     "amount": row["amount"],
                     "timestamp": row["timestamp"],
                     "mode": row["mode"],
@@ -249,8 +259,9 @@ def _build_entity_detail(name: str) -> dict:
                 break
 
     return {
-        "name": name,
+        "name": redact_name(name, redact),
         "type": entity_type,
+        "is_complainant": is_complainant(name),
         "rank": rank_info,
         "connections": connections,
         "fir_mentions": fir_mentions,
@@ -260,7 +271,7 @@ def _build_entity_detail(name: str) -> dict:
 
 
 @app.get("/report/{name}")
-def download_case_report(name: str, user: dict = Depends(require_auth)):
+def download_case_report(name: str, redact: bool = True, user: dict = Depends(require_auth)):
     """
     Generate and return a court-ready PDF case report for one entity,
     including a chain-of-custody verification block tied to the tamper-proof
@@ -270,7 +281,7 @@ def download_case_report(name: str, user: dict = Depends(require_auth)):
     """
     import json
 
-    detail = _build_entity_detail(name)
+    detail = _build_entity_detail(name, redact=redact)
     if "error" in detail:
         raise HTTPException(status_code=404, detail=detail["error"])
 
@@ -291,3 +302,87 @@ def download_case_report(name: str, user: dict = Depends(require_auth)):
         media_type="application/pdf",
         headers={"Content-Disposition": f'attachment; filename="case_report_{safe_filename}.pdf"'},
     )
+
+
+@app.get("/timeline")
+def get_timeline(redact: bool = True, user: dict = Depends(require_auth)):
+    """
+    Merge FIR reports, call records, and financial transactions into a single
+    chronological timeline — so an investigator can see the sequence of
+    events across every data source at a glance, instead of cross-referencing
+    three separate logs by hand.
+    """
+    import csv
+    import re as _re
+
+    events = []
+
+    # FIR events — pull the first date mentioned in each report's text
+    date_pattern = _re.compile(r"(\d{2})/(\d{2})/(\d{4})")
+    for report in process_fir_file(str(DATA_DIR / "sample_fir_reports.txt")):
+        m = date_pattern.search(report["raw_text"])
+        if m:
+            day, month, year = m.groups()
+            sort_key = f"{year}-{month}-{day} 00:00:00"
+            events.append({
+                "date": f"{day}/{month}/{year}",
+                "sort_key": sort_key,
+                "type": "FIR",
+                "description": redact_text(report["raw_text"], redact),
+            })
+
+    # Call events
+    with open(DATA_DIR / "sample_cdr.csv") as f:
+        for row in csv.DictReader(f):
+            events.append({
+                "date": row["timestamp"].split(" ")[0],
+                "sort_key": row["timestamp"],
+                "type": "CALL",
+                "description": (
+                    f"{redact_name(row['caller_name'], redact)} called "
+                    f"{redact_name(row['receiver_name'], redact)} "
+                    f"({row['duration_sec']}s, {row['tower_location']})"
+                ),
+            })
+
+    # Transaction events
+    with open(DATA_DIR / "sample_transactions.csv") as f:
+        for row in csv.DictReader(f):
+            events.append({
+                "date": row["timestamp"].split(" ")[0],
+                "sort_key": row["timestamp"],
+                "type": "TRANSACTION",
+                "description": (
+                    f"₹{int(row['amount']):,} transferred from "
+                    f"{redact_name(row['sender_name'], redact)} to "
+                    f"{redact_name(row['receiver_name'], redact)} via {row['mode']}"
+                ),
+            })
+
+    events.sort(key=lambda e: e["sort_key"])
+    return events
+
+
+@app.get("/heatmap")
+def get_heatmap(user: dict = Depends(require_auth)):
+    """
+    Return known case locations with approximate coordinates and an activity
+    count (how many times each location appears in the evidence — FIR
+    mentions plus call-tower records), for a geographic heat-map view of
+    where the network is operating.
+    """
+    import csv
+    from collections import Counter
+
+    counts = Counter()
+    for report in process_fir_file(str(DATA_DIR / "sample_fir_reports.txt")):
+        for loc in report["entities"]["locations"]:
+            counts[loc] += 1
+    with open(DATA_DIR / "sample_cdr.csv") as f:
+        for row in csv.DictReader(f):
+            counts[row["tower_location"]] += 1
+
+    points = []
+    for name, (lat, lng) in LOCATION_COORDS.items():
+        points.append({"name": name, "lat": lat, "lng": lng, "mentions": counts.get(name, 0)})
+    return points

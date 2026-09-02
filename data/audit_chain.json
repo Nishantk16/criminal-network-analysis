@@ -290,5 +290,49 @@
     },
     "previous_hash": "82065a22ab5fe5a9ea09679993585de090847c28c6186d0de65a9af296644409",
     "block_hash": "a133c469ad15e4f5cc8fc3e107d84096e0d812eb39ab9af323292a2d4fddc0c7"
+  },
+  {
+    "index": 22,
+    "timestamp": "2026-08-31 18:50:46",
+    "event_type": "USER_LOGIN",
+    "details": {
+      "username": "investigator",
+      "role": "investigator"
+    },
+    "previous_hash": "a133c469ad15e4f5cc8fc3e107d84096e0d812eb39ab9af323292a2d4fddc0c7",
+    "block_hash": "cee55dd1507f2e1c21cc2036eacd050880f564c31ca22640562e817a57922f93"
+  },
+  {
+    "index": 23,
+    "timestamp": "2026-08-31 18:50:58",
+    "event_type": "USER_LOGIN",
+    "details": {
+      "username": "investigator",
+      "role": "investigator"
+    },
+    "previous_hash": "cee55dd1507f2e1c21cc2036eacd050880f564c31ca22640562e817a57922f93",
+    "block_hash": "aaf36cd5c8bc8eba3493e99562830368931d2db25b6110c23dcb4363b81cc2c3"
+  },
+  {
+    "index": 24,
+    "timestamp": "2026-08-31 18:51:22",
+    "event_type": "USER_LOGIN",
+    "details": {
+      "username": "investigator",
+      "role": "investigator"
+    },
+    "previous_hash": "aaf36cd5c8bc8eba3493e99562830368931d2db25b6110c23dcb4363b81cc2c3",
+    "block_hash": "0354e6c12db091a30dbb85d5efe329604ddbc88bfd7fd0e30ab8f33c0c6e9eb0"
+  },
+  {
+    "index": 25,
+    "timestamp": "2026-09-02 20:06:07",
+    "event_type": "USER_LOGIN",
+    "details": {
+      "username": "investigator",
+      "role": "investigator"
+    },
+    "previous_hash": "0354e6c12db091a30dbb85d5efe329604ddbc88bfd7fd0e30ab8f33c0c6e9eb0",
+    "block_hash": "d9732de9b41155a944ef8d37b10cb4064a8e482e9e2b343297e8d8ede1f57b0d"
   }
 ]

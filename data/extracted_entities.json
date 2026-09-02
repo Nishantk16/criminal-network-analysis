@@ -155,7 +155,6 @@
     "entities": {
       "persons": [
         "Kavita Sharma",
-        "Lajpat Nagar",
         "Manoj Tiwari"
       ],
       "locations": [
@@ -172,20 +171,7 @@
         "25/03/2026"
       ]
     },
-    "relationships": [
-      {
-        "source": "Kavita Sharma",
-        "target": "Lajpat Nagar",
-        "type": "ASSOCIATED_WITH",
-        "evidence": "FIR-006: On 25/03/2026, a separate complaint was registered in Delhi by Kavita Sharma against a placement agency operating from Lajpat Nagar, alleging fraudulent recruitment promises."
-      },
-      {
-        "source": "Lajpat Nagar",
-        "target": "Manoj Tiwari",
-        "type": "ASSOCIATED_WITH",
-        "evidence": "The agency was reportedly run by Manoj Tiwari, who was seen with a vehicle bearing registration DL-08-XY-4321 near Lajpat Nagar, Delhi."
-      }
-    ]
+    "relationships": []
   },
   {
     "raw_text": "FIR-007: On 27/03/2026, surveillance flagged frequent contact between phone numb...",
